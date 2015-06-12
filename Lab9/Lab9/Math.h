@@ -7,7 +7,10 @@ struct float2
 {
 	float x, y;
 };
-
+struct int2
+{
+	int x, y;
+};
 
 struct float4
 {

@@ -1,42 +1,9 @@
-// D3D LAB 1a "Line Land".
-// Author: L.Norri CD DRX, FullSail University
-
-// Introduction:
-// Welcome to the first lab of the Direct3D Graphics Programming class.
-// This is the ONLY guided lab in this course! 
-// Future labs will demand the habits & foundation you develop right now!  
-// It is CRITICAL that you follow each and every step. ESPECIALLY THE READING!!!
-
-// TO BEGIN: Open the word document that acompanies this lab and start from the top.
-
 //************************************************************
 //************ INCLUDES & DEFINES ****************************
 //************************************************************
 
-#include <iostream>
-#include <ctime>
-#include "XTime.h"
-#include <D3D11.h>
 #include "Math.h"
-//#include <d3dx11.h>
 
-
-
-
-// include the Direct3D Library file
-#pragma comment (lib, "d3d11.lib")
-//#pragma comment (lib, "d3dx11.lib")
-
-
-#define SAFE_RELEASE(p) {if(p){p->Release(); p=nullptr;}}
-
-
-using namespace std;
-
-
-
-// TODO: PART 2 STEP 6
-//in defines
 
 
 //************************************************************
@@ -56,6 +23,7 @@ class DEMO_APP
 	ID3D11DeviceContext				*devCon;
 
 	DXGI_SWAP_CHAIN_DESC			scd;
+	DXGI_SWAP_CHAIN_DESC			scdFullScreen;
 	D3D11_VIEWPORT					viewport;
 
 	HRESULT tester;
@@ -65,10 +33,29 @@ class DEMO_APP
 
 	Simple_Vertex4 star[12];
 	Simple_Vertex4 triangle[3];
-	ID3D11Buffer *triangleBuf;
+	ID3D11Buffer *CubetriangleBuf;
 	ID3D11Buffer *indexBuf;
 	Matrix4x4 star1World = WorldMatrixInit();
 	bool wireOn = false;
+
+	//grid
+	Simple_Vertex4 grid[80];
+	Matrix4x4 gridWorld = WorldMatrixInit();
+	int2 gridIndicies[40];
+
+	ID3D11Buffer *GridtriangleBuf;
+	ID3D11PixelShader *gridPixelShader;
+	ID3D11VertexShader *gridVertexShader;
+	ID3D11InputLayout *gridLayout;
+	ID3D11Buffer *gridIndexBuf;
+
+	ID3D11Buffer *gridBuff;
+
+
+
+
+
+
 
 	ID3D11InputLayout *layout;
 	bool starOnScreen = false;
@@ -124,26 +111,24 @@ public:
 
 
 
-
 //************************************************************
 //************ CREATION OF OBJECTS & RESOURCES ***************
 //************************************************************
 
 DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 {
-
-	WorldMatrixInit();
+	gridWorld = star1World = WorldMatrixInit();
 	ViewMatrixInit();
 	ProjPerspectiveMatrixInit();
+
 
 	otherM.proj = ProjPerspectiveMatrix;
 	otherM.view = ViewMatrix;
 	rotate = 0;
 
-	//timething.Signal();
-
 	bool everyother = true;
-
+	//the star is alive
+#pragma region Star Defines
 	for (int i = 0; i < 10; i++)
 	{
 
@@ -173,10 +158,59 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 	star[11].r = 1;
 	star[11].g = 1;
 
+#pragma endregion
+
+	
+#pragma region Grid Init
+	for (int i = 0; i < 20; i++)
+	{
+		grid[i * 2].x = (i * 0.2f) - 2;
+		grid[(i * 2) + 1].x = (i * 0.2f) - 2;
+
+		grid[i * 2].y = 0;
+		grid[(i * 2) + 1].y = 0;
+
+		grid[i * 2].z = -2;
+		grid[(i * 2) + 1].z = 2;
+
+	/*	grid[i * 2].r = 0;
+		grid[i * 2].g = 1;
+		grid[i * 2].b = 0;
+		grid[i * 2].a = 0;
+		grid[(i * 2) + 1].r = 0;
+		grid[(i * 2) + 1].g = 1;
+		grid[(i * 2) + 1].b = 0;
+		grid[(i * 2) + 1].a = 0;
+
+		grid[40 + (2 * i)].r = 0;
+		grid[40 + (2 * i)].g = 1;
+		grid[40 + (2 * i)].b = 0;
+		grid[40 + (2 * i)].a = 0;
+		grid[40 + (2 * i) + 1].r = 0;
+		grid[40 + (2 * i) + 1].g = 1;
+		grid[40 + (2 * i) + 1].b = 0;
+		grid[40 + (2 * i) + 1].a = 0;*/
 
 
 
+		grid[(i * 2) + 40].x = 2;
+		grid[(i * 2) + 41].x = -2;
 
+		grid[(i * 2) + 40].y = 0;
+		grid[(i * 2) + 41].y = 0;
+
+		grid[(i * 2) + 40].z = (i * 0.2f) - 2;
+		grid[(i * 2) + 41].z = (i * 0.2f) - 2;
+	}
+
+	
+
+
+#pragma endregion
+
+
+
+#pragma region window
 	// ****************** BEGIN WARNING ***********************// 
 	// WINDOWS CODE, I DON'T TEACH THIS YOU MUST KNOW IT ALREADY! 
 	application = hinst;
@@ -203,8 +237,15 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 	ShowWindow(window, SW_SHOW);
 	//********************* END WARNING ************************//
 
+#pragma endregion
+
+#pragma region Inits
 	// TODO: PART 1 STEP 3a
+#pragma region SwapChainWindow
 	//swap chain settings
+	ZeroMemory(&scd, sizeof(DXGI_SWAP_CHAIN_DESC));
+
+
 	scd.BufferCount = 1;                                    // one back buffer
 
 	scd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;     // use 32-bit color
@@ -230,6 +271,14 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 	tester = D3D11CreateDeviceAndSwapChain(NULL, D3D_DRIVER_TYPE_HARDWARE, NULL,
 		D3D11_CREATE_DEVICE_DEBUG, NULL, NULL, D3D11_SDK_VERSION,
 		&scd, &swap, &dev, NULL, &devCon);
+#pragma endregion
+
+
+
+
+
+
+
 
 	// TODO: PART 1 STEP 4
 
@@ -255,12 +304,19 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 	viewport.TopLeftY = 0;
 	viewport.Width = BACKBUFFER_WIDTH;
 	viewport.Height = BACKBUFFER_HEIGHT;
-
+	
 	//set viewport
 	devCon->RSSetViewports(1, &viewport);
 
 
 
+	
+#pragma endregion
+
+
+#pragma region CubeSubresource
+
+	//if (starOnScreen)
 	// TODO: PART 2 STEP 3b
 	D3D11_BUFFER_DESC assigner;
 	assigner.Usage = D3D11_USAGE_IMMUTABLE;
@@ -270,23 +326,41 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 	assigner.ByteWidth = sizeof(_OBJ_VERT_) * 776;
 	assigner.StructureByteStride = 0;
 
-#pragma region CubeSubresource
-
-	//if (starOnScreen)
-
-
 	// TODO: PART 2 STEP 3c
-	D3D11_SUBRESOURCE_DATA sub;
-	sub.pSysMem = Cube_data;
-	sub.SysMemPitch = 0;
-	sub.SysMemSlicePitch = 0;
+	D3D11_SUBRESOURCE_DATA cubeSub;
+	cubeSub.pSysMem = Cube_data;
+	cubeSub.SysMemPitch = 0;
+	cubeSub.SysMemSlicePitch = 0;
 	// TODO: PART 2 STEP 3d
-	tester = dev->CreateBuffer(&assigner, &sub, &triangleBuf);
+	tester = dev->CreateBuffer(&assigner, &cubeSub, &CubetriangleBuf);
 
 
 #pragma endregion
 
+#pragma region Grid SubRescource
+	D3D11_BUFFER_DESC gridAssigner;
+	gridAssigner.Usage = D3D11_USAGE_IMMUTABLE;
+	gridAssigner.CPUAccessFlags = NULL;
+	gridAssigner.MiscFlags = NULL;
+	gridAssigner.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+	gridAssigner.ByteWidth = sizeof(Simple_Vertex4) * GRIDSIZE;
+	gridAssigner.StructureByteStride = 0;
 
+	// TODO: PART 2 STEP 3c
+	D3D11_SUBRESOURCE_DATA gridSub;
+	gridSub.pSysMem = grid;
+	gridSub.SysMemPitch = 0;
+	gridSub.SysMemSlicePitch = 0;
+	
+	
+	// TODO: PART 2 STEP 3d
+	tester = dev->CreateBuffer(&gridAssigner, &gridSub, &GridtriangleBuf);
+
+#pragma endregion
+
+
+
+#pragma region CubeShaders
 	// TODO: PART 2 STEP 7
 	tester = dev->CreatePixelShader(Trivial_PS, sizeof(Trivial_PS), NULL, &pixelShader);
 	tester = dev->CreateVertexShader(Trivial_VS, sizeof(Trivial_VS), NULL, &vertexShader);
@@ -296,8 +370,8 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 	D3D11_INPUT_ELEMENT_DESC vLayout[] =
 	{
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "UVS", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },		
-		{ "NORMS", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },	   
+		{ "UVS", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "NORMS", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 	};
 
 	D3D11_INPUT_ELEMENT_DESC pLayout[] =
@@ -308,12 +382,33 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 
 	// TODO: PART 2 STEP 8b
 
-	UINT strides;
-	strides = sizeof(Simple_Vertex4);
-	UINT offsets = 0;
+	
 
 	tester = dev->CreateInputLayout(vLayout, 3, Trivial_VS, sizeof(Trivial_VS), &layout);
+#pragma endregion
 
+#pragma region GridShaders
+
+	// TODO: PART 2 STEP 7
+	tester = dev->CreatePixelShader(Grid_PS, sizeof(Grid_PS), NULL, &gridPixelShader);
+	tester = dev->CreateVertexShader(Grid_VS, sizeof(Grid_VS), NULL, &gridVertexShader);
+	// TODO: PART 2 STEP 8a
+
+
+	D3D11_INPUT_ELEMENT_DESC cvLayout[] =
+	{
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 }
+	};
+
+	// TODO: PART 2 STEP 8b
+
+	tester = dev->CreateInputLayout(cvLayout, 2, Grid_VS, sizeof(Grid_VS), &gridLayout);
+
+#pragma endregion
+
+
+#pragma region Cube Textures
 	// TODO: PART 3 STEP 3
 
 	D3D11_BUFFER_DESC newbuf[2];
@@ -323,13 +418,14 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 	newbuf[0].CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 	newbuf[0].MiscFlags = NULL;
 
-
 	newbuf[1].ByteWidth = sizeof(otherM);
 	newbuf[1].Usage = D3D11_USAGE_DYNAMIC;
 	newbuf[1].BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 	newbuf[1].CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 	newbuf[1].MiscFlags = NULL;
-
+	
+	tester = dev->CreateBuffer(&newbuf[0], NULL, &newBuf[0]);
+	tester = dev->CreateBuffer(&newbuf[1], NULL, &newBuf[1]);
 
 	//TextureBuffer
 	D3D11_TEXTURE2D_DESC descText;
@@ -384,11 +480,15 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 	pShaderBuf.Flags = D3D11_BUFFEREX_SRV_FLAG_RAW;
 	pDesc.BufferEx = pShaderBuf;
 
-	
+
 	tester = dev->CreateShaderResourceView(pTexture2D, NULL, &shaderRes);
 	devCon->PSSetShaderResources(0, 1, &shaderRes);
+#pragma endregion
 
-#pragma region Index
+
+
+
+#pragma region Cube Index
 	//if (starOnScreen)
 	//{
 		//index buffer settings
@@ -404,86 +504,132 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 		indexSub.pSysMem = Cube_indicies;
 		indexSub.SysMemPitch = 0;
 		indexSub.SysMemSlicePitch = 0;
-
-		tester = dev->CreateBuffer(&newbuf[0], NULL, &newBuf[0]);
-		tester = dev->CreateBuffer(&newbuf[1], NULL, &newBuf[1]);
+		
+		
+		
 		tester = dev->CreateBuffer(&indexBuffer, &indexSub, &indexBuf);
 
 	//}
 #pragma endregion
 
-	//DepthBuffer
-	D3D11_TEXTURE2D_DESC descDepth;
-	descDepth.MipLevels = Tron_numlevels;
-	descDepth.ArraySize = 1;
-	descDepth.MiscFlags = NULL;
-	descDepth.CPUAccessFlags = NULL;
-	descDepth.SampleDesc.Quality = 0;
-	descDepth.SampleDesc.Count = 1;
-	descDepth.Width = BACKBUFFER_WIDTH;
-	descDepth.Height = BACKBUFFER_HEIGHT;
-	descDepth.Usage = D3D11_USAGE_DEFAULT;
-	descDepth.Format = DXGI_FORMAT_R32_TYPELESS;
-	descDepth.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
+
+
+#pragma region Grid Index
+
+
+		//if (starOnScreen)
+		//{
+		//index buffer settings
+		D3D11_BUFFER_DESC gridIndex;
+		gridIndex.Usage = D3D11_USAGE_IMMUTABLE;
+		gridIndex.CPUAccessFlags = NULL;
+		gridIndex.MiscFlags = NULL;
+		gridIndex.BindFlags = D3D11_BIND_INDEX_BUFFER;
+		gridIndex.ByteWidth = sizeof(float2) * 40;
+		gridIndex.StructureByteStride = 0;
+
+
+		for (int i = 0; i < 20; i++)
+		{
+			gridIndicies[(i * 2)].x = (i * 2);
+			gridIndicies[(i * 2) + 1].y = (i * 2) + 1;
+
+		}
 	
-	tester = dev->CreateTexture2D(&descDepth, NULL, &pDepthStencil);
-	descDepth.SampleDesc.Count = 1;
+		D3D11_SUBRESOURCE_DATA gridIndexSub;
+		gridIndexSub.pSysMem = gridIndicies;
+		gridIndexSub.SysMemPitch = 0;
+		gridIndexSub.SysMemSlicePitch = 0;
 
-	D3D11_DEPTH_STENCIL_DESC dsDesc;
+		tester = dev->CreateBuffer(&newbuf[0], NULL, &gridBuff);
+		//tester = dev->CreateBuffer(&newbuf[1], NULL, &gridBuff[1]);
+		tester = dev->CreateBuffer(&gridIndex, &gridIndexSub, &gridIndexBuf);
 
-	// Depth test parameters
-	dsDesc.DepthEnable = true;
-	dsDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
-	dsDesc.DepthFunc = D3D11_COMPARISON_LESS;
+		
+#pragma endregion
 
-	// Stencil test parameters
-	dsDesc.StencilEnable = false;
-	dsDesc.StencilReadMask = 0;
-	dsDesc.StencilWriteMask = 0;
+		lastmouseY = 0;
 
-	// Stencil operations if pixel is front-facing
-	dsDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_REPLACE;
-	dsDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_REPLACE;
-	dsDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_REPLACE;
-	dsDesc.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+#pragma region Cube Depth Stencil
+		//DepthBuffer
+		D3D11_TEXTURE2D_DESC descDepth;
+		descDepth.MipLevels = Tron_numlevels;
+		descDepth.ArraySize = 1;
+		descDepth.MiscFlags = NULL;
+		descDepth.CPUAccessFlags = NULL;
+		descDepth.SampleDesc.Quality = 0;
+		descDepth.SampleDesc.Count = 1;
+		descDepth.Width = BACKBUFFER_WIDTH;
+		descDepth.Height = BACKBUFFER_HEIGHT;
+		descDepth.Usage = D3D11_USAGE_DEFAULT;
+		descDepth.Format = DXGI_FORMAT_R32_TYPELESS;
+		descDepth.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
 
-	// Stencil operations if pixel is back-facing
-	dsDesc.BackFace.StencilFailOp = D3D11_STENCIL_OP_REPLACE;
-	dsDesc.BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_REPLACE;
-	dsDesc.BackFace.StencilPassOp = D3D11_STENCIL_OP_REPLACE;
-	dsDesc.BackFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+		tester = dev->CreateTexture2D(&descDepth, NULL, &pDepthStencil);
+		descDepth.SampleDesc.Count = 1;
 
-	ZeroMemory(&pDSV, sizeof(ID3D11DepthStencilView));
+		D3D11_DEPTH_STENCIL_DESC dsDesc;
 
-	// Create depth stencil state
-	ID3D11DepthStencilState * pDSState;
-	tester = dev->CreateDepthStencilState(&dsDesc, &pDSState);
+		// Depth test parameters
+		dsDesc.DepthEnable = true;
+		dsDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+		dsDesc.DepthFunc = D3D11_COMPARISON_LESS;
 
-	devCon->OMSetDepthStencilState(pDSState, 1);
+		// Stencil test parameters
+		dsDesc.StencilEnable = false;
+		dsDesc.StencilReadMask = 0;
+		dsDesc.StencilWriteMask = 0;
 
-	descDSV.Format = DXGI_FORMAT_D32_FLOAT;
-	descDSV.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
-	descDSV.Texture2D.MipSlice = 0;
-	descDSV.Flags = NULL;
+		// Stencil operations if pixel is front-facing
+		dsDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_REPLACE;
+		dsDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_REPLACE;
+		dsDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_REPLACE;
+		dsDesc.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
 
-	tester = dev->CreateDepthStencilView(pDepthStencil, // Depth stencil texture
-		&descDSV, // Depth stencil desc
-		&pDSV);  // [out] Depth stencil view
-	//stencilviews
+		// Stencil operations if pixel is back-facing
+		dsDesc.BackFace.StencilFailOp = D3D11_STENCIL_OP_REPLACE;
+		dsDesc.BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_REPLACE;
+		dsDesc.BackFace.StencilPassOp = D3D11_STENCIL_OP_REPLACE;
+		dsDesc.BackFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+
+		ZeroMemory(&pDSV, sizeof(ID3D11DepthStencilView));
+
+		// Create depth stencil state
+		ID3D11DepthStencilState * pDSState;
+		tester = dev->CreateDepthStencilState(&dsDesc, &pDSState);
+
+		devCon->OMSetDepthStencilState(pDSState, 1);
+
+		descDSV.Format = DXGI_FORMAT_D32_FLOAT;
+		descDSV.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+		descDSV.Texture2D.MipSlice = 0;
+		descDSV.Flags = NULL;
+
+		tester = dev->CreateDepthStencilView(pDepthStencil, // Depth stencil texture
+			&descDSV, // Depth stencil desc
+			&pDSV);  // [out] Depth stencil view
+		//stencilviews
 
 
-	D3D11_RASTERIZER_DESC rState;
-	ZeroMemory(&rState, sizeof(D3D11_RASTERIZER_DESC));
-	rState.FillMode = D3D11_FILL_MODE::D3D11_FILL_SOLID;
-	rState.CullMode = D3D11_CULL_MODE::D3D11_CULL_BACK;
-	rState.DepthClipEnable = true;
+#pragma endregion
 
-	dev->CreateRasterizerState(&rState, &rasterStateSolid);
+#pragma region Wireframe Mode
+		D3D11_RASTERIZER_DESC rState;
+		ZeroMemory(&rState, sizeof(D3D11_RASTERIZER_DESC));
+		rState.FillMode = D3D11_FILL_MODE::D3D11_FILL_SOLID;
+		rState.CullMode = D3D11_CULL_MODE::D3D11_CULL_BACK;
+		rState.DepthClipEnable = true;
+		rState.AntialiasedLineEnable = true;
+		rState.MultisampleEnable = true;
+		dev->CreateRasterizerState(&rState, &rasterStateSolid);
 
-	rState.FillMode = D3D11_FILL_MODE::D3D11_FILL_WIREFRAME;
-
-	dev->CreateRasterizerState(&rState, &rasterStateWire);
-	pDSState->Release();
+		//rState.FillMode = D3D11_FILL_MODE::D3D11_FILL_WIREFRAME;
+		rState.AntialiasedLineEnable = false;
+		rState.MultisampleEnable = false;
+		dev->CreateRasterizerState(&rState, &rasterStateWire);
+		pDSState->Release();
+#pragma endregion
+		devCon->RSSetState(rasterStateSolid);
 }
 //****************************************************************************
 //**************************** EXECUTION *************************************
@@ -493,6 +639,7 @@ bool DEMO_APP::Run()
 {
 #pragma region Movement
 
+#pragma region Keyboard
 	if (GetAsyncKeyState('O') & 0x1)
 	{
 		starOnScreen = !starOnScreen;
@@ -630,8 +777,9 @@ bool DEMO_APP::Run()
 	{
 		otherM.view = MatrixRotateXDeg(otherM.view, DegToRad(0.1f));
 	}
+#pragma endregion
 
-
+#pragma region Mouse 
 	if (GetAsyncKeyState(VK_RBUTTON))
 	{
 		POINT point;
@@ -646,7 +794,6 @@ bool DEMO_APP::Run()
 				lastmouseY = currMouseY;
 			}
 
-
 			int differenceX = currMouseX - lastmouseX;
 			int differenceY = currMouseY - lastmouseY;
 
@@ -660,12 +807,10 @@ bool DEMO_APP::Run()
 			otherM.view.vert[3][1] = 0;
 			otherM.view.vert[3][2] = 0;
 
-
 			Matrix4x4 _m = IdentityMatrix();
 
 			_m = MatrixRotateYDeg(_m, DegToRad(differenceX * 0.2f));
 			_m = MatrixRotateXDeg(_m, DegToRad(differenceY * 0.2f));
-
 
 			otherM.view = Matrix4x4Multiply(_m, otherM.view);
 
@@ -675,6 +820,8 @@ bool DEMO_APP::Run()
 
 		}
 	}
+#pragma endregion
+
 #pragma endregion
 
 
@@ -692,10 +839,57 @@ bool DEMO_APP::Run()
 	devCon->ClearDepthStencilView(pDSV, D3D11_CLEAR_DEPTH, 1, 0);
 #pragma endregion
 
-#pragma region Star 1
+#pragma region Grid
+
+	
+	//gridWorld.vert[3][2] = 0;
+	//gridWorld  = MatrixRotateYDeg(gridWorld, DegToRad(rotate));
+
+	//rotate = 10 * (float)timething.Delta();
+	//gridWorld.vert[3][2] = 2;
+
+	timething.Signal();
+
+	//world matrix for grid VS
+	otherM.view = Matrix_Inverse(otherM.view);
+	D3D11_MAPPED_SUBRESOURCE GridmapRes;
+	ZeroMemory(&GridmapRes, sizeof(D3D11_MAPPED_SUBRESOURCE));
+	tester = devCon->Map(gridBuff, NULL, D3D11_MAP_WRITE_DISCARD, NULL, &GridmapRes);
+	memcpy(GridmapRes.pData, &gridWorld, sizeof(gridWorld));
+
+	devCon->Unmap(gridBuff, NULL);
+	
+	otherM.view = Matrix_Inverse(otherM.view);
+
+	devCon->VSSetConstantBuffers(0, 1, &gridBuff);
+
+	// TODO: PART 2 STEP 9a
+	UINT gridstrides;
+	gridstrides = sizeof(Simple_Vertex4);
+	UINT gridoffsets = 0;
+
+	devCon->IASetVertexBuffers(0, 1, &GridtriangleBuf, &gridstrides, &gridoffsets);
+
+	devCon->IASetIndexBuffer(gridIndexBuf, DXGI_FORMAT_R32_UINT, gridoffsets);
+	// TODO: PART 2 STEP 9b
+	devCon->VSSetShader(gridVertexShader, 0, 0);
+	devCon->PSSetShader(gridPixelShader, 0, 0);
+
+	// TODO: PART 2 STEP 9c
+	devCon->IASetInputLayout(gridLayout);
+
+	// TODO: PART 2 STEP 9d
+	devCon->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_LINELIST);
+
+	// TODO: PART 2 STEP 10
+	devCon->Draw(80, 0);
+
+#pragma endregion
+
+#pragma region Cube 1
 	
 
-	devCon->PSSetShaderResources(0, 1, &shaderRes);
+//	devCon->PSSetShaderResources(0, 1, &shaderRes);
 	star1World.vert[3][2] = 0;
 
 	star1World = MatrixRotateYDeg(star1World, DegToRad(rotate));
@@ -712,6 +906,7 @@ bool DEMO_APP::Run()
 	memcpy(mapRes.pData, &star1World, sizeof(star1World));
 
 	devCon->Unmap(newBuf[0], NULL);
+	
 	//view matrix VS
 	ZeroMemory(&mapRes, sizeof(D3D11_MAPPED_SUBRESOURCE));
 	tester = devCon->Map(newBuf[1], NULL, D3D11_MAP_WRITE_DISCARD, NULL, &mapRes);
@@ -725,7 +920,7 @@ bool DEMO_APP::Run()
 	UINT strides = sizeof(OBJ_VERT);
 	UINT offsets = 0;
 
-	devCon->IASetVertexBuffers(0, 1, &triangleBuf, &strides, &offsets);
+	devCon->IASetVertexBuffers(0, 1, &CubetriangleBuf, &strides, &offsets);
 
 	devCon->IASetIndexBuffer(indexBuf, DXGI_FORMAT_R32_UINT, offsets);
 	// TODO: PART 2 STEP 9b
@@ -742,11 +937,6 @@ bool DEMO_APP::Run()
 	devCon->DrawIndexed(Cube_index_size, 0, 0);
 #pragma endregion
 
-#pragma region Star 2
-
-
-
-#pragma endregion
 
 	tester = swap->Present(0, 0);
 
@@ -760,13 +950,21 @@ bool DEMO_APP::Run()
 
 bool DEMO_APP::ShutDown()
 {
-	// TODO: PART 1 STEP 6
+	swap->SetFullscreenState(FALSE, NULL);    // switch to windowed mode
+	
+	SAFE_RELEASE(GridtriangleBuf);
+	SAFE_RELEASE(gridPixelShader);
+	SAFE_RELEASE(gridVertexShader);
+	SAFE_RELEASE(gridLayout);
+	SAFE_RELEASE(gridIndexBuf);
+	SAFE_RELEASE(gridBuff);
+	SAFE_RELEASE(pTexture2D);
 	SAFE_RELEASE(devCon);
 	SAFE_RELEASE(dev);
 	SAFE_RELEASE(backBuffer);
 	SAFE_RELEASE(swap);
 	SAFE_RELEASE(layout);
-	SAFE_RELEASE(triangleBuf);
+	SAFE_RELEASE(CubetriangleBuf);
 	SAFE_RELEASE(indexBuf);
 	SAFE_RELEASE(pDSV);
 	SAFE_RELEASE(pixelShader);
@@ -776,7 +974,6 @@ bool DEMO_APP::ShutDown()
 	SAFE_RELEASE(pDepthStencil);
 	SAFE_RELEASE(rasterStateSolid);
 	SAFE_RELEASE(rasterStateWire);
-
 
 	SAFE_RELEASE(samplerState);
 	SAFE_RELEASE(shaderRes);

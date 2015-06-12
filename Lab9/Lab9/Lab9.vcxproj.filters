@@ -42,5 +42,7 @@
   <ItemGroup>
     <FxCompile Include="Trivial_VS.hlsl" />
     <FxCompile Include="Trivial_PS.hlsl" />
+    <FxCompile Include="Grid_PS.hlsl" />
+    <FxCompile Include="Grid_VS.hlsl" />
   </ItemGroup>
 </Project>
