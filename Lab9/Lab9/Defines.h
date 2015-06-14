@@ -1,24 +1,27 @@
 #pragma once
-// BEGIN PART 1
-// TODO: PART 1 STEP 1a
-// BEGIN PART 1
-// TODO: PART 1 STEP 1a
 
-// TODO: PART 1 STEP 1b
 #include <iostream>
 #include <Windows.h>
 #include <D3D11.h>
 #include <DirectXMath.h>
 #include <ctime>
 
-#include "Grid_PS.csh"
-#include "Grid_VS.csh"
+#include <vector>
+#include <sstream>
+#include <dwrite.h>
+#include <dinput.h>
+#include <vector>
+#include <fstream>
+#include <istream>
+
+//#include "DDSTextureLoader.h"
+//#include "Grid_PS.csh"
+//#include "Grid_VS.csh"
 #include "Trivial_PS.csh"
 #include "Trivial_VS.csh"
-#include "Cube.h"
-#include "Tron.h"
-#include "XTime.h"
 
+
+#include "XTime.h"
 
 #pragma comment (lib, "d3d11.lib")
 
@@ -26,10 +29,10 @@ using namespace std;
 using namespace DirectX;
 
 
+
 #define FOV 125.0f
-#define PI 3.14f
-#define RASTER_WIDTH 500
-#define RASTER_HEIGHT 500
+#define PI 3.14159265f
+
 
 #define BACKBUFFER_WIDTH	800
 #define BACKBUFFER_HEIGHT	800
@@ -48,3 +51,5 @@ using namespace DirectX;
 
 #define GRIDSIZE 160
 #define SAFE_RELEASE(p) {if(p){p->Release(); p=nullptr;}}
+
+#define D3DXToDegree(radian) ((radian) * (180.0f / PI))

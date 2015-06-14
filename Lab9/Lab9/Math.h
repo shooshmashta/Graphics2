@@ -1,16 +1,13 @@
 #pragma once
-#include "Defines.h"
 
+#include "ObjectModel.h"
 //structures
 
 struct float2
 {
 	float x, y;
 };
-struct int2
-{
-	int x, y;
-};
+
 
 struct float4
 {
@@ -83,8 +80,8 @@ float DegToRad(float d)
 
 Vertex4 NDCtoScreenV4(Vertex4 p)
 {
-	p.vert[0] = p.vert[0] * (RASTER_WIDTH / 2) + (RASTER_WIDTH / 2);
-	p.vert[1] = -p.vert[1] * (RASTER_HEIGHT / 2) + (RASTER_HEIGHT / 2);
+	p.vert[0] = p.vert[0] * (BACKBUFFER_WIDTH / 2) + (BACKBUFFER_WIDTH / 2);
+	p.vert[1] = -p.vert[1] * (BACKBUFFER_HEIGHT / 2) + (BACKBUFFER_HEIGHT / 2);
 	//p.vert[2] = 0;
 	//p.vert[3] = 0;
 
@@ -361,8 +358,6 @@ Matrix4x4 MatrixRotateYDeg(Matrix4x4 v, float deg)
 	return v;
 }
 
-
-
 Matrix4x4 ViewRotateZDeg(Matrix4x4 v, float deg)
 {
 	Matrix4x4 zrot;
@@ -448,7 +443,7 @@ Matrix4x4 WorldMatrix;
 	WorldMatrix.vert[0][0] = 1;		WorldMatrix.vert[0][1] = 0;		WorldMatrix.vert[0][2] = 0;			WorldMatrix.vert[0][3] = 0;
 	WorldMatrix.vert[1][0] = 0;		WorldMatrix.vert[1][1] = 1;		WorldMatrix.vert[1][2] = 0;			WorldMatrix.vert[1][3] = 0;
 	WorldMatrix.vert[2][0] = 0;		WorldMatrix.vert[2][1] = 0;		WorldMatrix.vert[2][2] = 1;			WorldMatrix.vert[2][3] = 0;
-	WorldMatrix.vert[3][0] = x;		WorldMatrix.vert[3][1] = y;		WorldMatrix.vert[3][2] = z;			WorldMatrix.vert[3][3] = 1;
+	WorldMatrix.vert[3][0] = 1;		WorldMatrix.vert[3][1] = 1;		WorldMatrix.vert[3][2] = 5;			WorldMatrix.vert[3][3] = 1;
 	return WorldMatrix;
 }
 
@@ -468,14 +463,13 @@ void ViewMatrixInit()
 	ViewMatrix.vert[0][0] = 1;			ViewMatrix.vert[0][1] = 0.0f;						ViewMatrix.vert[0][2] = 0.0f;					ViewMatrix.vert[0][3] = 0;
 	ViewMatrix.vert[1][0] = 0.0f;		ViewMatrix.vert[1][1] = 1;							ViewMatrix.vert[1][2] = 0;						ViewMatrix.vert[1][3] = 0;
 	ViewMatrix.vert[2][0] = 0.0f;		ViewMatrix.vert[2][1] = 0;							ViewMatrix.vert[2][2] = 1;						ViewMatrix.vert[2][3] = 0;
-	ViewMatrix.vert[3][0] = 0.0f;		ViewMatrix.vert[3][1] = 0.5f;						ViewMatrix.vert[3][2] = 0;						ViewMatrix.vert[3][3] = 1;
+	ViewMatrix.vert[3][0] = 0.0f;		ViewMatrix.vert[3][1] = 0.0f;						ViewMatrix.vert[3][2] = 0;						ViewMatrix.vert[3][3] = 1;
 
 }
 
 void ViewMatrixInvert()
 {
 	Vertex4 tz, vm;
-
 	tz.vert[0] = 0;
 	tz.vert[1] = 0;
 	tz.vert[2] = 1.0f;
@@ -510,7 +504,7 @@ void ProjPerspectiveMatrixInit()
 	float yscale;
 
 	yscale = 1 / tanf(DegToRad(.5 * FOV));
-	xscale = yscale * (RASTER_HEIGHT / RASTER_WIDTH);
+	xscale = yscale * (BACKBUFFER_HEIGHT / BACKBUFFER_WIDTH);
 
 	yscale = 1;
 	xscale = 1;
@@ -526,3 +520,5 @@ struct otherMatrixes
 {
 	Matrix4x4 view, proj;
 };
+
+

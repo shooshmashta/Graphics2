@@ -160,12 +160,14 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="ObjectModel.cpp" />
     <ClCompile Include="XTime.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Cube.h" />
     <ClInclude Include="Defines.h" />
     <ClInclude Include="Math.h" />
+    <ClInclude Include="ObjectModel.h" />
     <ClInclude Include="Tron.h" />
     <ClInclude Include="XTime.h" />
   </ItemGroup>

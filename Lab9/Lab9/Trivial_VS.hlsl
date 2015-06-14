@@ -2,16 +2,14 @@
 
 struct V_IN
 {
-	float3 posL : POSITION;
-	float3 tex : UVS;
-	float3 norm : NORMS;
+	float4 posL : POSITION;
+	float4 colorOut : COLOR;
 };
 
 struct V_OUT
 {
+	float4 colorOut : COLOR;
 	float4 posH : SV_POSITION;
-	float3 tex : UVS;
-
 };
 
 cbuffer OBJECT : register(b0)
@@ -40,8 +38,7 @@ V_OUT main(V_IN input)
 	localH = mul(localH, projectionMatrix);
 
 	output.posH = localH;
-	output.tex = input.tex;
-	//output.norm = input.norm;
+	output.colorOut = input.colorOut;
 	
 
 	return output; // send projected vertex to the rasterizer stage
