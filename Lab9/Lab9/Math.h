@@ -38,14 +38,7 @@ struct TriIndexBuffer
 
 };
 
-struct Simple_Vertex4
-{
-	//position
-	float x = 0.0f, y = 0.0f, z = 0.0f, w = 1.0f;
-	//colors
-	float r = 0.0f, g = 0.0f, b = 0.0f, a = 0.0f;
-	//float u, v;
-};
+
 
 struct Vertex3
 {

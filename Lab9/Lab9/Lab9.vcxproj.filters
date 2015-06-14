@@ -24,6 +24,9 @@
     <ClCompile Include="ObjectModel.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="DDSTextureLoader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="XTime.h">
@@ -44,11 +47,14 @@
     <ClInclude Include="ObjectModel.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="DDSTextureLoader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Trivial_VS.hlsl" />
     <FxCompile Include="Trivial_PS.hlsl" />
-    <FxCompile Include="Grid_PS.hlsl" />
-    <FxCompile Include="Grid_VS.hlsl" />
+    <FxCompile Include="Textured_VS.hlsl" />
+    <FxCompile Include="Textured_PS.hlsl" />
   </ItemGroup>
 </Project>

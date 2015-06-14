@@ -1,39 +1,18 @@
-// D3D LAB 1a "Line Land".
-// Author: L.Norri CD DRX, FullSail University
-
-// Introduction:
-// Welcome to the first lab of the Direct3D Graphics Programming class.
-// This is the ONLY guided lab in this course! 
-// Future labs will demand the habits & foundation you develop right now!  
-// It is CRITICAL that you follow each and every step. ESPECIALLY THE READING!!!
-
-// TO BEGIN: Open the word document that acompanies this lab and start from the top.
-
 //************************************************************
 //************ INCLUDES & DEFINES ****************************
 //************************************************************
 
-
-//#include <d3dx11.h>
 
 #include "Math.h"
 
 
 // include the Direct3D Library file
 #pragma comment (lib, "d3d11.lib")
-//#pragma comment (lib, "d3dx11.lib")
-
 
 #define SAFE_RELEASE(p) {if(p){p->Release(); p=nullptr;}}
 
 
 using namespace std;
-
-
-
-// TODO: PART 2 STEP 6
-//in defines
-
 
 //************************************************************
 //************ SIMPLE WINDOWS APP CLASS **********************
@@ -59,8 +38,8 @@ class DEMO_APP
 	ID3D11RasterizerState * rasterStateSolid;
 	ID3D11RasterizerState * rasterStateWire;
 
-	Simple_Vertex4 star[12];
-	Simple_Vertex4 triangle[3];
+	Simple_Vert star[12];
+	Simple_Vert triangle[3];
 	ID3D11Buffer *triangleBuf;
 	ID3D11Buffer *indexBuf;
 	XMMATRIX star1World = XMMatrixIdentity();
@@ -71,10 +50,7 @@ class DEMO_APP
 
 	TriIndexBuffer starIndex[20];
 
-	// BEGIN PART 5
-	// TODO: PART 5 STEP 1
-
-	// TODO: PART 2 STEP 4
+	
 
 	ID3D11PixelShader *pixelShader;
 	ID3D11VertexShader *vertexShader;
@@ -82,14 +58,13 @@ class DEMO_APP
 	ID3D11DepthStencilView* pDSV;
 	D3D11_DEPTH_STENCIL_VIEW_DESC descDSV;
 	ID3D11Texture2D* pDepthStencil = NULL;
-	// BEGIN PART 3
-	// TODO: PART 3 STEP 1
+	
 
 	ID3D11Buffer *newBuf[2];
 	XTime timething;
 
 	ObjectModel pyramid;
-
+	ObjectModel starTester;
 	ProjViewMatricies OotherM;
 
 	struct SEND_TO_VRAM
@@ -99,19 +74,12 @@ class DEMO_APP
 	};
 	float rotate;
 
-	// TODO: PART 3 STEP 4a
-
 	SEND_TO_VRAM toShader;
-	//otherMatrixes otherM;
+	
 
 
 
 public:
-	// BEGIN PART 2
-	// TODO: PART 2 STEP 1
-
-	//structure went here
-
 	DEMO_APP(HINSTANCE hinst, WNDPROC proc);
 	bool Run();
 	bool ShutDown();
@@ -165,8 +133,6 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 	
 	rotate = 0;
 
-	//timething.Signal();
-
 	bool everyother = true;
 
 	for (int i = 0; i < 10; i++)
@@ -175,28 +141,28 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 		if (everyother)
 		{
 			everyother = false;
-			star[i].x = cosf(DegToRad(36.0f * (float)(i)));
-			star[i].y = sinf(DegToRad(36.0f * (float)(i)));
+			star[i].m_vect.x = cosf(DegToRad(36.0f * (float)(i)));
+			star[i].m_vect.y = sinf(DegToRad(36.0f * (float)(i)));
 		}
 		else
 		{
-			star[i].x = cosf(DegToRad(36.0f * (float)i)) / 2;
-			star[i].y = sinf(DegToRad(36.0f * (float)i)) / 2;
+			star[i].m_vect.x = cosf(DegToRad(36.0f * (float)i)) / 2;
+			star[i].m_vect.y = sinf(DegToRad(36.0f * (float)i)) / 2;
 			everyother = true;
 		}
 
-		star[i].r = 0.5f;
-		star[i].g = 0.25f;
+		star[i].m_color.x = 0.5f;
+		star[i].m_color.y = 0.25f;
 
 	}
 
-	star[10].z = 0.3f;
-	star[11].z = -0.3f;
+	star[10].m_vect.z = 0.3f;
+	star[11].m_vect.z = -0.3f;
 
-	star[10].r = 1;
-	star[10].g = 1;
-	star[11].r = 1;
-	star[11].g = 1;
+	star[10].m_color.x = 1;
+	star[10].m_color.y = 1;
+	star[11].m_color.x = 1;
+	star[11].m_color.y = 1;
 
 
 	
@@ -228,7 +194,7 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 	ShowWindow(window, SW_SHOW);
 	//********************* END WARNING ************************//
 
-	// TODO: PART 1 STEP 3a
+	
 	//swap chain settings
 	scd.BufferCount = 1;                                    // one back buffer
 
@@ -251,12 +217,10 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 
 
 	const UINT num_requested_feature_levels = 1;
-	// TODO: PART 1 STEP 3b
+	
 	tester = D3D11CreateDeviceAndSwapChain(NULL, D3D_DRIVER_TYPE_HARDWARE, NULL,
 		D3D11_CREATE_DEVICE_DEBUG, NULL, NULL, D3D11_SDK_VERSION,
 		&scd, &swap, &dev, NULL, &devCon);
-
-	// TODO: PART 1 STEP 4
 
 	////get the address of the back buffer
 	ID3D11Texture2D *_BackBuffer = nullptr;
@@ -269,8 +233,6 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 	//set the render target as the back buffer
 	devCon->OMSetRenderTargets(1, &backBuffer, NULL);
 
-	
-	// TODO: PART 1 STEP 5
 	//viewport
 	ZeroMemory(&viewport, sizeof(D3D11_VIEWPORT));
 
@@ -284,30 +246,23 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 	//set viewport
 	devCon->RSSetViewports(1, &viewport);
 
-
-
-	// TODO: PART 2 STEP 3b
 	D3D11_BUFFER_DESC assigner;
 	assigner.Usage = D3D11_USAGE_IMMUTABLE;
 	assigner.CPUAccessFlags = NULL;
 	assigner.MiscFlags = NULL;
 	assigner.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-	assigner.ByteWidth = sizeof(Simple_Vertex4) * 12;
+	assigner.ByteWidth = sizeof(Simple_Vert) * 12;
 	assigner.StructureByteStride = 0;
 
 
-	
-	// TODO: PART 2 STEP 3c
 	D3D11_SUBRESOURCE_DATA sub;
 	sub.pSysMem = star;
 	sub.SysMemPitch = 0;
 	sub.SysMemSlicePitch = 0;
-	// TODO: PART 2 STEP 3d
+
 	tester = dev->CreateBuffer(&assigner, &sub, &triangleBuf);
 	tester = dev->CreatePixelShader(Trivial_PS, sizeof(Trivial_PS), NULL, &pixelShader);
 	tester = dev->CreateVertexShader(Trivial_VS, sizeof(Trivial_VS), NULL, &vertexShader);
-	// TODO: PART 2 STEP 8a
-
 
 	D3D11_INPUT_ELEMENT_DESC vLayout[] =
 	{
@@ -316,8 +271,7 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 	};
 
 	tester = dev->CreateInputLayout(vLayout, 2, Trivial_VS, sizeof(Trivial_VS), &layout);
-	// TODO: PART 3 STEP 3
-
+	
 	D3D11_BUFFER_DESC newbuf[2];
 	newbuf[0].ByteWidth = sizeof(Matrix4x4);
 	newbuf[0].Usage = D3D11_USAGE_DYNAMIC;
@@ -325,15 +279,11 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 	newbuf[0].CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 	newbuf[0].MiscFlags = NULL;
 
-
 	newbuf[1].ByteWidth = sizeof(OotherM);
 	newbuf[1].Usage = D3D11_USAGE_DYNAMIC;
 	newbuf[1].BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 	newbuf[1].CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 	newbuf[1].MiscFlags = NULL;
-	//newbuf.StructureByteStride = 0;
-
-
 	
 	//index buffer settings
 	D3D11_BUFFER_DESC indexBuffer;
@@ -384,7 +334,7 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 	descDepth.Usage = D3D11_USAGE_DEFAULT;
 	descDepth.Format = DXGI_FORMAT_R32_TYPELESS;
 	descDepth.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
-	//descDepth.
+	
 	tester = dev->CreateTexture2D(&descDepth, NULL, &pDepthStencil);
 	descDepth.SampleDesc.Count = 1;
 
@@ -441,14 +391,14 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 	rState.DepthClipEnable = true;
 	rState.AntialiasedLineEnable = true;
 	rState.MultisampleEnable = true;
-
+	rState.FrontCounterClockwise = false;
 	dev->CreateRasterizerState(&rState, &rasterStateSolid);
 
 	//ZeroMemory(&rState, sizeof(D3D11_RASTERIZER_DESC));
 	rState.FillMode = D3D11_FILL_MODE::D3D11_FILL_WIREFRAME;
 	rState.AntialiasedLineEnable = false;
 	rState.MultisampleEnable = false;
-
+	rState.FrontCounterClockwise = true;
 	dev->CreateRasterizerState(&rState, &rasterStateWire);
 	devCon->RSSetState(rasterStateSolid);
 	pDSState->Release();
@@ -458,11 +408,22 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 	pyramid.loadOBJ("pyramid1.obj");
 	pyramid.Init(XMFLOAT3(1, 1, 1), dev, devCon, &OotherM, false);
 
+	Simple_Vert _v;
 
+	for (size_t i = 0; i < 12; i++)
+	{
+		_v = star[i];
 
+		starTester.v_vertices.push_back(_v);
+	}
+	for (size_t i = 0; i < 20; i++)
+	{
+		starTester.vertexIndices.push_back(starIndex[i].i0);
+		starTester.vertexIndices.push_back(starIndex[i].i1);
+		starTester.vertexIndices.push_back(starIndex[i].i2);
+	}
 
-
-
+	starTester.Init(XMFLOAT3(-1, 0, 1), dev, devCon, &OotherM, false);
 }
 //****************************************************************************
 //**************************** EXECUTION *************************************
@@ -551,7 +512,7 @@ bool DEMO_APP::Run()
 	if (GetAsyncKeyState(VK_NUMPAD4))
 	{
 		XMMATRIX _m = XMMatrixIdentity();
-		_m = _m * XMMatrixRotationY(DegToRad(0.1f));
+		_m = _m * XMMatrixRotationY(DegToRad(-0.1f));
 
 
 		float _x = OotherM.view.r[3].m128_f32[0];
@@ -571,7 +532,7 @@ bool DEMO_APP::Run()
 	else if (GetAsyncKeyState(VK_NUMPAD6))
 	{
 		XMMATRIX _m = XMMatrixIdentity();
-		_m = _m * XMMatrixRotationY(DegToRad(-0.1f));
+		_m = _m * XMMatrixRotationY(DegToRad(0.1f));
 
 		float _x = OotherM.view.r[3].m128_f32[0];
 		float _y = OotherM.view.r[3].m128_f32[1];
@@ -589,11 +550,11 @@ bool DEMO_APP::Run()
 
 	if (GetAsyncKeyState(VK_NUMPAD5))
 	{
-		OotherM.view = OotherM.view * XMMatrixRotationX(DegToRad(-0.1f));
+		OotherM.view = OotherM.view * XMMatrixRotationX(DegToRad(0.1f));
 	}
 	else if (GetAsyncKeyState(VK_NUMPAD8))
 	{
-		OotherM.view = OotherM.view * XMMatrixRotationX(DegToRad(0.1f));
+		OotherM.view = OotherM.view * XMMatrixRotationX(DegToRad(-0.1f));
 	}
 #pragma endregion
 
@@ -618,7 +579,7 @@ bool DEMO_APP::Run()
 	star1World.r[3].m128_f32[2] = _z;
 
 	rotate =  (float)timething.Delta();
-	//star1World.vert[3][2] = 2;
+	
 
 	timething.Signal();
 	OotherM.view = XMMatrixInverse(nullptr, OotherM.view);
@@ -634,39 +595,29 @@ bool DEMO_APP::Run()
 	memcpy(mapRes.pData, &OotherM, sizeof(OotherM));
 	devCon->Unmap(newBuf[1], NULL);
 	OotherM.view = XMMatrixInverse(nullptr, OotherM.view);
-	// TODO: PART 3 STEP 6
-
+	
 	devCon->VSSetConstantBuffers(0, 2, newBuf);
 
-	// TODO: PART 2 STEP 9a
-	UINT strides = sizeof(Simple_Vertex4);
+	UINT strides = sizeof(Simple_Vert);
 	UINT offsets = 0;
 
 	devCon->IASetVertexBuffers(0, 1, &triangleBuf, &strides, &offsets);
 
 	devCon->IASetIndexBuffer(indexBuf, DXGI_FORMAT_R16_UINT, offsets);
-	// TODO: PART 2 STEP 9b
 	devCon->VSSetShader(vertexShader, 0, 0);
 	devCon->PSSetShader(pixelShader, 0, 0);
-
-	// TODO: PART 2 STEP 9c
 	devCon->IASetInputLayout(layout);
 
-	// TODO: PART 2 STEP 9d
 	devCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-	// TODO: PART 2 STEP 10
 	devCon->DrawIndexed(60, 0, 0);  
 #pragma endregion
 
 #pragma region Star 2
 
 	pyramid.Run(dev, devCon);
-
-
+	starTester.Run(dev, devCon);
 #pragma endregion
-
-
 
 	tester = swap->Present(0, 0);
 

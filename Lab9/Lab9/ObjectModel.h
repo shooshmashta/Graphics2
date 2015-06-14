@@ -1,15 +1,26 @@
 #pragma once
 #include "Defines.h"
+
 struct ProjViewMatricies
 {
 	XMMATRIX view, proj;
 };
 
+struct StrideStruct
+{
+	XMFLOAT3 v_vertices;
+	XMFLOAT2 v_uvs;
+	XMFLOAT3 v_normals;
+};
 
-
-
-
-
+struct Simple_Vert
+{
+	//position
+	XMFLOAT4 m_vect = XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f);
+	//colors
+	XMFLOAT4 m_color = XMFLOAT4(0.0f, 0.0f, 0.0f, 0.0f);
+	//float u, v;
+};
 
 struct ObjectModel
 {
@@ -22,15 +33,17 @@ struct ObjectModel
 	ID3D11Buffer* IndexBuff;            // Models index buffer
 	ID3D11Buffer* matrixLocationBuffer[2];
 
-
 	ID3D11InputLayout *layout;
 	ID3D11PixelShader *pixelShader;
 	ID3D11VertexShader *vertexShader;
 
 	vector< unsigned int > vertexIndices, uvIndices, normalIndices;
-	vector < XMFLOAT3 > v_vertices;
-	vector < XMFLOAT2 > v_uvs;
-	vector < XMFLOAT3 > v_normals;
+	
+	vector<Simple_Vert> v_vertices;
+	vector<XMFLOAT2> v_uvs;
+	vector<XMFLOAT3> v_normals;
+
+	vector<StrideStruct> m_stride;
 	
 	ProjViewMatricies * ProjView;
 

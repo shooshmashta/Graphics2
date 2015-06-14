@@ -6,7 +6,6 @@ ObjectModel::ObjectModel()
 bool ObjectModel::loadOBJ(
 	const char * path	)
 {
-	
 	std::vector< XMFLOAT3 > temp_vertices;
 	std::vector< XMFLOAT2 > temp_uvs;
 	std::vector< XMFLOAT3 > temp_normals;
@@ -20,7 +19,6 @@ bool ObjectModel::loadOBJ(
 
 	while (true)
 	{
-
 		char lineHeader[128];
 		// read the first word of the line
 		int res = fscanf(file, "%s", lineHeader);
@@ -71,12 +69,14 @@ bool ObjectModel::loadOBJ(
 		}
 		else
 		{
-			// Probably a comment, eat up the rest of the line
-			char stupidBuffer[1000];
-			fgets(stupidBuffer, 1000, file);
+			// kill line
+			char commentBuffer[1000];
+			fgets(commentBuffer, 1000, file);
 		}
 	}
 
+
+	Simple_Vert v;
 
 	for (unsigned int i = 0; i < vertexIndices.size(); i++)
 	{
@@ -84,14 +84,24 @@ bool ObjectModel::loadOBJ(
 		unsigned int uvIndex = uvIndices[i];
 		unsigned int normIndex = vertexIndices[i];
 		
-		XMFLOAT3 vertex = temp_vertices[vertexIndex - 1];
+		v.m_vect = XMFLOAT4(temp_vertices[vertexIndex - 1].x, temp_vertices[vertexIndex - 1].y, temp_vertices[vertexIndex - 1].z, 1.0f);
 		XMFLOAT2 uv = temp_uvs[uvIndex - 1];
 		XMFLOAT3 norm = temp_normals[normIndex - 1];
-	
-		v_vertices.push_back(vertex);
+		
+		
+
+		v_vertices.push_back(v);
 		v_uvs.push_back(uv);
 		v_normals.push_back(norm);
+		
+		StrideStruct _ss;
+		_ss.v_vertices = temp_vertices[vertexIndex - 1];
+		_ss.v_uvs = temp_uvs[uvIndex - 1];
+		_ss.v_normals = temp_normals[normIndex - 1];
+	
+		vertexIndices[i] = i;
 	}
+
 	return true;
 }
 
@@ -101,11 +111,12 @@ bool ObjectModel::Init(XMFLOAT3 pos,
 	ProjViewMatricies* _viewproj,
 	bool texture)
 {
-	world.r[3] = XMVectorSet(pos.x, pos.y, pos.z, 1.f);
+	world.r[3] = XMVectorSet(pos.x, 0, pos.z, 1.0f);
 
 	ProjView = _viewproj;
 
 	hasTexture = texture;
+
 #pragma region Obj Subresource
 	HRESULT tester = 0;
 	D3D11_BUFFER_DESC assigner;
@@ -113,11 +124,11 @@ bool ObjectModel::Init(XMFLOAT3 pos,
 	assigner.CPUAccessFlags = NULL;
 	assigner.MiscFlags = NULL;
 	assigner.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-	assigner.ByteWidth = sizeof(vector<XMFLOAT3>) * v_vertices.size();
-	assigner.StructureByteStride = 0;
+	assigner.ByteWidth = sizeof(Simple_Vert) * v_vertices.size();
+	assigner.StructureByteStride = sizeof(Simple_Vert);
 
 	D3D11_SUBRESOURCE_DATA obj_verts;
-	obj_verts.pSysMem = &v_vertices;
+	obj_verts.pSysMem = &v_vertices[0];
 	obj_verts.SysMemPitch = 0;
 	obj_verts.SysMemSlicePitch = 0;
 
@@ -166,8 +177,8 @@ bool ObjectModel::Init(XMFLOAT3 pos,
 	tester = dev->CreateInputLayout(vLayout, 2, Trivial_VS,
 		sizeof(Trivial_VS), &layout);
 #pragma endregion
-
-
+	
+	
 #pragma region ObjTextures
 	if (hasTexture)
 	{
@@ -236,15 +247,14 @@ bool ObjectModel::Init(XMFLOAT3 pos,
 	indexBuffer.MiscFlags = NULL;
 	indexBuffer.CPUAccessFlags = NULL;
 	indexBuffer.BindFlags = D3D11_BIND_INDEX_BUFFER;
-	indexBuffer.ByteWidth = sizeof(vector<XMFLOAT3>) * vertexIndices.size() ;
-	indexBuffer.StructureByteStride = 0;
+	indexBuffer.ByteWidth = sizeof(unsigned int) * vertexIndices.size();
+	indexBuffer.StructureByteStride = sizeof(unsigned int);
 
 	D3D11_SUBRESOURCE_DATA indexSub;
-	indexSub.pSysMem = &vertexIndices;
+	indexSub.pSysMem = &vertexIndices[0];
 	indexSub.SysMemPitch = 0;
 	indexSub.SysMemSlicePitch = 0;
 
-	
 	tester = dev->CreateBuffer(&indexBuffer, &indexSub, &IndexBuff);
 
 
@@ -268,7 +278,6 @@ bool ObjectModel::Init(XMFLOAT3 pos,
 	othermatrix.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 	othermatrix.MiscFlags = NULL;
 
-
 	tester = dev->CreateBuffer(&othermatrix, NULL, &matrixLocationBuffer[1]);
 
 
@@ -288,7 +297,7 @@ bool ObjectModel::Run(
 	D3D11_MAPPED_SUBRESOURCE mapRes;
 	ZeroMemory(&mapRes, sizeof(D3D11_MAPPED_SUBRESOURCE));
 	tester = devCon->Map(matrixLocationBuffer[0], NULL, D3D11_MAP_WRITE_DISCARD, NULL, &mapRes);
-	memcpy(mapRes.pData, &world, sizeof(world));
+	memcpy(mapRes.pData, &world, sizeof(XMMATRIX));
 
 	devCon->Unmap(matrixLocationBuffer[0], NULL);
 
@@ -304,13 +313,13 @@ bool ObjectModel::Run(
 
 
 #pragma region VS and PS
-	UINT strides = sizeof(vector < XMFLOAT3 >);
+	UINT strides = sizeof(Simple_Vert);
 	UINT offsets = 0;
 
 
 	devCon->IASetVertexBuffers(0, 1, &VertBuff, &strides, &offsets);
 
-	devCon->IASetIndexBuffer(IndexBuff, DXGI_FORMAT_R16_UINT, offsets);
+	devCon->IASetIndexBuffer(IndexBuff, DXGI_FORMAT_R32_UINT, offsets);
 	// TODO: PART 2 STEP 9b
 	devCon->VSSetShader(vertexShader, 0, 0);
 	devCon->PSSetShader(pixelShader, 0, 0);
@@ -334,6 +343,11 @@ bool ObjectModel::Run(
 
 void ObjectModel::Cleanup()
 {
+	/*delete[] p_vertInd;
+	delete[] p_verts;
+	delete[] p_norms;
+	delete[] p_uvs	;*/
+	
 	SAFE_RELEASE(VertBuff);             // Models vertex buffer
 	SAFE_RELEASE(IndexBuff);            // Models index buffer
 	SAFE_RELEASE(matrixLocationBuffer[0]);
