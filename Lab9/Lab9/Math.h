@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Lights.h"
+#include "ObjectModel.h"
 
 struct TriIndexBuffer
 {
@@ -31,7 +31,7 @@ void ProjPerspectiveMatrixInit()
 	float xscale;
 	float yscale;
 
-	yscale = 1 / tanf(ToRad(.5 * FOV));
+	yscale = 1 / tanf(ToRad(0.5f * FOV));
 	xscale = yscale * (BACKBUFFER_HEIGHT / BACKBUFFER_WIDTH);
 
 	yscale = 1;

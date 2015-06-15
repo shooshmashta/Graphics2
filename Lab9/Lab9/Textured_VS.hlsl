@@ -42,7 +42,7 @@ V_OUT main(V_IN input)
 
 	output.posH = localH;
 	output.tex = input.tex;
-	output.norm = input.norm;
+	output.norm = mul(input.norm, worldMatrix);
 
 
 	return output; // send projected vertex to the rasterizer stage

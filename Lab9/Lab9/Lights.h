@@ -1,5 +1,12 @@
 #pragma once
-#include"ObjectModel.h"
+#include "Defines.h"
+struct ProjViewMatricies
+{
+	XMMATRIX view, proj;
+};
+
+
+
 struct Light
 {
 	Light()
@@ -24,11 +31,28 @@ struct FullLight
 	XMFLOAT4 emissive;
 	XMFLOAT4 power;
 	XMFLOAT4 position;
-
-
 };
 
-struct toPixelShader
+struct lightStruct
 {
 	Light  Directional;
+};
+
+struct Lights
+{
+	
+	lightStruct light;
+
+	ID3D11Buffer * LightBuffer;
+
+	bool Init(XMFLOAT3 pos,
+		ID3D11Device * dev,
+		ID3D11DeviceContext *devCon,
+		ProjViewMatricies* _viewproj);
+
+	bool Run(
+		ID3D11Device* dev,
+		ID3D11DeviceContext* devCon);
+
+	void Cleanup();
 };

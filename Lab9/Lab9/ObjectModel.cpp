@@ -2,7 +2,16 @@
 
 ObjectModel::~ObjectModel()
 {
-
+	if (hasLight)
+	{
+		light.Cleanup();
+	}
+	if (hasTexture)
+	{
+		/*SAFE_RELEASE(textureResource);
+		SAFE_RELEASE(ObjTextureSamplerState);
+		SAFE_RELEASE(ObjTexture);*/
+	}
 	SAFE_RELEASE(VertBuff);             // Models vertex buffer
 	SAFE_RELEASE(IndexBuff);            // Models index buffer
 	SAFE_RELEASE(matrixLocationBuffer[0]);
@@ -113,19 +122,19 @@ bool ObjectModel::loadOBJ(
 }
 
 bool ObjectModel::Init(XMFLOAT3 pos,
-	ID3D11Device* dev, 
-	ID3D11DeviceContext* devCon, 
+	ID3D11Device* dev,
+	ID3D11DeviceContext* devCon,
 	ProjViewMatricies* _viewproj,
-	bool texture)
+	bool texture, bool _light)
 {
 	
-
 
 	world.r[3] = XMVectorSet(pos.x, 0, pos.z, 1.0f);
 
 	ProjView = _viewproj;
 
 	hasTexture = texture;
+	hasLight = _light;
 
 
 
@@ -240,6 +249,11 @@ bool ObjectModel::Init(XMFLOAT3 pos,
 
 		tester = dev->CreateInputLayout(vLayout, 3, Textured_VS,
 			sizeof(Textured_VS), &layout);
+
+		if (hasLight)
+		{
+			light.Init(XMFLOAT3(3, 3, 1), dev, devCon, ProjView);
+		}
 	
 	}
 #pragma endregion
@@ -248,29 +262,35 @@ bool ObjectModel::Init(XMFLOAT3 pos,
 #pragma region ObjTextures
 	if (hasTexture)
 	{
-		////TextureBuffer
-		//D3D11_TEXTURE2D_DESC descText;
-		//descText.MipLevels = Tron_numlevels;
-		//descText.ArraySize = 1;
-		//descText.MiscFlags = NULL;
-		//descText.CPUAccessFlags = NULL;
-		//descText.SampleDesc.Quality = 0;
-		//descText.SampleDesc.Count = 1;
-		//descText.Width = Tron_width;
-		//descText.Height = Tron_height;
-		//descText.Usage = D3D11_USAGE_DEFAULT;
-		//descText.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
-		//descText.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+		ID3D11Resource * thingy = textureResource;
+		tester = CreateDDSTextureFromFile(dev, L"energy_seamless.dds", 
+			&thingy, &ObjTexture);
 
-		//D3D11_SUBRESOURCE_DATA textSub[Tron_numlevels];
-		//for (int i = 0; i < Tron_numlevels; i++)
-		//{
-		//	ZeroMemory(&textSub[i], sizeof(textSub[i]));
-		//	textSub[i].pSysMem = Tron_pixels + Tron_leveloffsets[i];
-		//	textSub[i].SysMemPitch = (Tron_width >> i) * sizeof(unsigned int);
-		//}
 
-		//tester = dev->CreateTexture2D(&descText, textSub, &pTexture2D);
+
+		////////TextureBuffer
+		////D3D11_TEXTURE2D_DESC descText;
+		////descText.MipLevels = Tron_numlevels;
+		////descText.ArraySize = 1;
+		////descText.MiscFlags = NULL;
+		////descText.CPUAccessFlags = NULL;
+		////descText.SampleDesc.Quality = 0;
+		////descText.SampleDesc.Count = 1;
+		////descText.Width = Tron_width;
+		////descText.Height = Tron_height;
+		////descText.Usage = D3D11_USAGE_DEFAULT;
+		////descText.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+		////descText.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+
+		////D3D11_SUBRESOURCE_DATA textSub[Tron_numlevels];
+		////for (int i = 0; i < Tron_numlevels; i++)
+		////{
+		////	ZeroMemory(&textSub[i], sizeof(textSub[i]));
+		////	textSub[i].pSysMem = Tron_pixels + Tron_leveloffsets[i];
+		////	textSub[i].SysMemPitch = (Tron_width >> i) * sizeof(unsigned int);
+		////}
+
+		////tester = dev->CreateTexture2D(&descText, textSub, &pTexture2D);
 
 		//D3D11_SAMPLER_DESC sampleDec;
 		//sampleDec.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
@@ -284,8 +304,8 @@ bool ObjectModel::Init(XMFLOAT3 pos,
 		//sampleDec.ComparisonFunc = D3D11_COMPARISON_NEVER;
 
 
-		//tester = dev->CreateSamplerState(&sampleDec, &samplerState);
-		//
+		//tester = dev->CreateSamplerState(&sampleDec, &ObjTextureSamplerState);
+		////
 		//D3D11_SHADER_RESOURCE_VIEW_DESC pDesc;
 		//pDesc.Texture2D.MipLevels = Tron_numlevels;
 		//pDesc.Texture2D.MostDetailedMip = 0;
@@ -390,6 +410,11 @@ bool ObjectModel::Run(
 	{
 		strides = sizeof(StrideStruct);
 		offsets = 0;
+		if (hasLight)
+		{
+			light.Run(dev, devCon);
+		}
+		devCon->PSSetShaderResources(0, 1, &ObjTexture);
 	}
 
 

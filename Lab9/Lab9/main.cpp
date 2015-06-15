@@ -353,7 +353,7 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 
 
 	pyramid.loadOBJ("pyramid1.obj");
-	pyramid.Init(XMFLOAT3(1, 1, 1), dev, devCon, &OotherM, true);
+	pyramid.Init(XMFLOAT3(1, 1, 1), dev, devCon, &OotherM, true, true);
 
 	Simple_Vert _v;
 	StrideStruct _s;
@@ -374,7 +374,7 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 		starTester.vertexIndices.push_back(starIndex[i].i2);
 	}
 	//do not set to true
-	starTester.Init(XMFLOAT3(-1, 0, 1), dev, devCon, &OotherM, false);
+	starTester.Init(XMFLOAT3(-1, 0, 1), dev, devCon, &OotherM, false, false);
 }
 //****************************************************************************
 //**************************** EXECUTION *************************************
@@ -636,6 +636,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, LPTSTR, int)
 		}
 	}
 	myApp.ShutDown();
+
 	return 0;
 }
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
