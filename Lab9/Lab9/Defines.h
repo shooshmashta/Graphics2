@@ -14,9 +14,9 @@
 #include <fstream>
 #include <istream>
 
-//#include "DDSTextureLoader.h"
-//#include "Grid_PS.csh"
-//#include "Grid_VS.csh"
+#include "DDSTextureLoader.h"
+#include "Textured_PS.csh"
+#include "Textured_VS.csh"
 #include "Trivial_PS.csh"
 #include "Trivial_VS.csh"
 
@@ -52,4 +52,8 @@ using namespace DirectX;
 #define GRIDSIZE 160
 #define SAFE_RELEASE(p) {if(p){p->Release(); p=nullptr;}}
 
-#define D3DXToDegree(radian) ((radian) * (180.0f / PI))
+#define ToDegree(rad) ((rad) * (180.0f / PI))
+#define ToRad(deg) ((deg) * ( PI / 180.0f))
+
+//movement
+#define ROTATION_GAIN 0.004f

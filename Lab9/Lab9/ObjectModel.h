@@ -8,9 +8,9 @@ struct ProjViewMatricies
 
 struct StrideStruct
 {
-	XMFLOAT3 v_vertices;
-	XMFLOAT2 v_uvs;
-	XMFLOAT3 v_normals;
+	XMFLOAT4 m_vect = XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f);
+	XMFLOAT2 v_uvs = XMFLOAT2(0.0f, 0.0f);
+	XMFLOAT3 v_normals = XMFLOAT3(0.0f, 0.0f, 0.0f);
 };
 
 struct Simple_Vert
@@ -19,13 +19,18 @@ struct Simple_Vert
 	XMFLOAT4 m_vect = XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f);
 	//colors
 	XMFLOAT4 m_color = XMFLOAT4(0.0f, 0.0f, 0.0f, 0.0f);
+
+
 	//float u, v;
 };
+
+
+
 
 struct ObjectModel
 {
 	
-	ObjectModel();
+	~ObjectModel();
 
 	XMMATRIX world = XMMatrixIdentity();
 	bool hasTexture;
@@ -37,11 +42,14 @@ struct ObjectModel
 	ID3D11PixelShader *pixelShader;
 	ID3D11VertexShader *vertexShader;
 
+	//all light stuff
+	
+
 	vector< unsigned int > vertexIndices, uvIndices, normalIndices;
 	
 	vector<Simple_Vert> v_vertices;
-	vector<XMFLOAT2> v_uvs;
-	vector<XMFLOAT3> v_normals;
+	/*vector<XMFLOAT2> v_uvs;
+	vector<XMFLOAT3> v_normals;*/
 
 	vector<StrideStruct> m_stride;
 	
@@ -54,6 +62,10 @@ struct ObjectModel
 		bool hasTextures);
 	
 	bool Run(
+		ID3D11Device* dev,
+		ID3D11DeviceContext* devCon);
+
+	bool RunNewPos(XMFLOAT3 pos,
 		ID3D11Device* dev,
 		ID3D11DeviceContext* devCon);
 	

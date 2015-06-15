@@ -160,6 +160,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="DDSTextureLoader.cpp" />
+    <ClCompile Include="Lights.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="ObjectModel.cpp" />
     <ClCompile Include="XTime.cpp" />
@@ -168,6 +169,7 @@
     <ClInclude Include="Cube.h" />
     <ClInclude Include="DDSTextureLoader.h" />
     <ClInclude Include="Defines.h" />
+    <ClInclude Include="Lights.h" />
     <ClInclude Include="Math.h" />
     <ClInclude Include="ObjectModel.h" />
     <ClInclude Include="Tron.h" />

@@ -39,18 +39,19 @@ class DEMO_APP
 	ID3D11RasterizerState * rasterStateWire;
 
 	Simple_Vert star[12];
-	Simple_Vert triangle[3];
-	ID3D11Buffer *triangleBuf;
-	ID3D11Buffer *indexBuf;
+
 	XMMATRIX star1World = XMMatrixIdentity();
 
 	bool wireOn = false;
-
-	ID3D11InputLayout *layout;
+	
 
 	TriIndexBuffer starIndex[20];
 
-	
+	//movement
+	LONG lastmouseY = 0;
+	LONG lastmouseX = 0;
+	float m_pitch, m_yaw;			// orientation euler angles in radians
+	XMFLOAT3 m_position;
 
 	ID3D11PixelShader *pixelShader;
 	ID3D11VertexShader *vertexShader;
@@ -141,13 +142,13 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 		if (everyother)
 		{
 			everyother = false;
-			star[i].m_vect.x = cosf(DegToRad(36.0f * (float)(i)));
-			star[i].m_vect.y = sinf(DegToRad(36.0f * (float)(i)));
+			star[i].m_vect.x = cosf(ToRad(36.0f * (float)(i)));
+			star[i].m_vect.y = sinf(ToRad(36.0f * (float)(i)));
 		}
 		else
 		{
-			star[i].m_vect.x = cosf(DegToRad(36.0f * (float)i)) / 2;
-			star[i].m_vect.y = sinf(DegToRad(36.0f * (float)i)) / 2;
+			star[i].m_vect.x = cosf(ToRad(36.0f * (float)i)) / 2;
+			star[i].m_vect.y = sinf(ToRad(36.0f * (float)i)) / 2;
 			everyother = true;
 		}
 
@@ -165,7 +166,23 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 	star[11].m_color.y = 1;
 
 
-	
+	for (int i = 0; i < 10; i++)
+	{
+		starIndex[i].i1 = i;
+		starIndex[i].i2 = i + 1;
+
+		starIndex[i + 10].i1 = i + 1;
+		starIndex[i + 10].i2 = i;
+		starIndex[i + 10].i0 = 11;
+
+		if (i > 8)
+		{
+			starIndex[i].i2 = 0;
+
+			starIndex[i + 10].i1 = 0;
+			starIndex[i + 10].i2 = i;
+		}
+	}
 
 
 	// ****************** BEGIN WARNING ***********************// 
@@ -246,80 +263,10 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 	//set viewport
 	devCon->RSSetViewports(1, &viewport);
 
-	D3D11_BUFFER_DESC assigner;
-	assigner.Usage = D3D11_USAGE_IMMUTABLE;
-	assigner.CPUAccessFlags = NULL;
-	assigner.MiscFlags = NULL;
-	assigner.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-	assigner.ByteWidth = sizeof(Simple_Vert) * 12;
-	assigner.StructureByteStride = 0;
-
-
-	D3D11_SUBRESOURCE_DATA sub;
-	sub.pSysMem = star;
-	sub.SysMemPitch = 0;
-	sub.SysMemSlicePitch = 0;
-
-	tester = dev->CreateBuffer(&assigner, &sub, &triangleBuf);
-	tester = dev->CreatePixelShader(Trivial_PS, sizeof(Trivial_PS), NULL, &pixelShader);
-	tester = dev->CreateVertexShader(Trivial_VS, sizeof(Trivial_VS), NULL, &vertexShader);
-
-	D3D11_INPUT_ELEMENT_DESC vLayout[] =
-	{
-		{ "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 }
-	};
-
-	tester = dev->CreateInputLayout(vLayout, 2, Trivial_VS, sizeof(Trivial_VS), &layout);
 	
-	D3D11_BUFFER_DESC newbuf[2];
-	newbuf[0].ByteWidth = sizeof(Matrix4x4);
-	newbuf[0].Usage = D3D11_USAGE_DYNAMIC;
-	newbuf[0].BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	newbuf[0].CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	newbuf[0].MiscFlags = NULL;
 
-	newbuf[1].ByteWidth = sizeof(OotherM);
-	newbuf[1].Usage = D3D11_USAGE_DYNAMIC;
-	newbuf[1].BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	newbuf[1].CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	newbuf[1].MiscFlags = NULL;
+
 	
-	//index buffer settings
-	D3D11_BUFFER_DESC indexBuffer;
-	indexBuffer.Usage = D3D11_USAGE_IMMUTABLE;
-	indexBuffer.CPUAccessFlags = NULL;
-	indexBuffer.MiscFlags = NULL;
-	indexBuffer.BindFlags = D3D11_BIND_INDEX_BUFFER;
-	indexBuffer.ByteWidth = sizeof(TriIndexBuffer) * 20;
-	indexBuffer.StructureByteStride = 0;
-	
-	for (int i = 0; i < 10; i++)
-	{
-		starIndex[i].i1 = i;
-		starIndex[i].i2 = i + 1;
-
-		starIndex[i + 10].i1 = i + 1;
-		starIndex[i + 10].i2 = i;
-		starIndex[i + 10].i0 = 11;
-
-		if (i > 8)
-		{
-			starIndex[i].i2 = 0;
-
-			starIndex[i + 10].i1 = 0;
-			starIndex[i + 10].i2 = i;
-		}
-	}
-
-	D3D11_SUBRESOURCE_DATA indexSub;
-	indexSub.pSysMem = starIndex;
-	indexSub.SysMemPitch = 0;
-	indexSub.SysMemSlicePitch = 0;
-	
-	tester = dev->CreateBuffer(&newbuf[0], NULL, &newBuf[0]);
-	tester = dev->CreateBuffer(&newbuf[1], NULL, &newBuf[1]);
-	tester = dev->CreateBuffer(&indexBuffer, &indexSub, &indexBuf);
 
 
 	D3D11_TEXTURE2D_DESC descDepth;
@@ -383,7 +330,7 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 		&pDSV);  // [out] Depth stencil view
 	//stencilviews
 
-
+	  
 	D3D11_RASTERIZER_DESC rState;
 	ZeroMemory(&rState, sizeof(D3D11_RASTERIZER_DESC));
 	rState.FillMode = D3D11_FILL_MODE::D3D11_FILL_SOLID;
@@ -395,7 +342,7 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 	dev->CreateRasterizerState(&rState, &rasterStateSolid);
 
 	//ZeroMemory(&rState, sizeof(D3D11_RASTERIZER_DESC));
-	rState.FillMode = D3D11_FILL_MODE::D3D11_FILL_WIREFRAME;
+	//rState.FillMode = D3D11_FILL_MODE::D3D11_FILL_WIREFRAME;
 	rState.AntialiasedLineEnable = false;
 	rState.MultisampleEnable = false;
 	rState.FrontCounterClockwise = true;
@@ -406,15 +353,19 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 
 
 	pyramid.loadOBJ("pyramid1.obj");
-	pyramid.Init(XMFLOAT3(1, 1, 1), dev, devCon, &OotherM, false);
+	pyramid.Init(XMFLOAT3(1, 1, 1), dev, devCon, &OotherM, true);
 
 	Simple_Vert _v;
+	StrideStruct _s;
 
 	for (size_t i = 0; i < 12; i++)
 	{
 		_v = star[i];
 
+		_s.m_vect = star[i].m_vect;
+
 		starTester.v_vertices.push_back(_v);
+		starTester.m_stride.push_back(_s);
 	}
 	for (size_t i = 0; i < 20; i++)
 	{
@@ -422,7 +373,7 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 		starTester.vertexIndices.push_back(starIndex[i].i1);
 		starTester.vertexIndices.push_back(starIndex[i].i2);
 	}
-
+	//do not set to true
 	starTester.Init(XMFLOAT3(-1, 0, 1), dev, devCon, &OotherM, false);
 }
 //****************************************************************************
@@ -447,64 +398,64 @@ bool DEMO_APP::Run()
 		}
 	}
 	
-	Vertex4 viewMovement;
+	XMFLOAT4 viewMovement;
 	if (GetAsyncKeyState('W'))
 	{
-		viewMovement.vert[0] = 0;
-		viewMovement.vert[1] = 0;
-		viewMovement.vert[2] = 0.01f;
+		viewMovement.x= 0;
+		viewMovement.y = 0;
+		viewMovement.z = 0.01f;
 
 		XMMATRIX _m = XMMatrixIdentity();
-		_m = XMMatrixTranslation(viewMovement.vert[0], viewMovement.vert[1], viewMovement.vert[2]);
+		_m = XMMatrixTranslation(viewMovement.x, viewMovement.y, viewMovement.z);
 		OotherM.view = _m * OotherM.view;
 
 
 	}
 	if (GetAsyncKeyState('A'))
 	{
-		viewMovement.vert[0] = -0.01f;
-		viewMovement.vert[1] = 0;
-		viewMovement.vert[2] = 0.0f;
+		viewMovement.x = -0.01f;
+		viewMovement.y = 0;
+		viewMovement.z = 0.0f;
 		XMMATRIX _m = XMMatrixIdentity();
-		_m = XMMatrixTranslation(viewMovement.vert[0], viewMovement.vert[1], viewMovement.vert[2]);
+		_m = XMMatrixTranslation(viewMovement.x, viewMovement.y, viewMovement.z);
 		OotherM.view = _m * OotherM.view;
 	}
 	if (GetAsyncKeyState('S'))
 	{
-		viewMovement.vert[0] = 0;
-		viewMovement.vert[1] = 0;
-		viewMovement.vert[2] = -0.01f;
+		viewMovement.x = 0;
+		viewMovement.y = 0;
+		viewMovement.z = -0.01f;
 		XMMATRIX _m = XMMatrixIdentity();
-		_m = XMMatrixTranslation(viewMovement.vert[0], viewMovement.vert[1], viewMovement.vert[2]);
+		_m = XMMatrixTranslation(viewMovement.x, viewMovement.y, viewMovement.z);
 		OotherM.view = _m * OotherM.view;
 	}
 	if (GetAsyncKeyState('D'))
 	{
 
-		viewMovement.vert[0] = 0.01f;
-		viewMovement.vert[1] = 0;
-		viewMovement.vert[2] = 0;
+		viewMovement.x = 0.01f;
+		viewMovement.y = 0;
+		viewMovement.z = 0;
 		XMMATRIX _m = XMMatrixIdentity();
-		_m = XMMatrixTranslation(viewMovement.vert[0], viewMovement.vert[1], viewMovement.vert[2]);
+		_m = XMMatrixTranslation(viewMovement.x, viewMovement.y, viewMovement.z);
 		OotherM.view = _m * OotherM.view;
 	}
 	if (GetAsyncKeyState('R'))
 	{
 
-		viewMovement.vert[0] = 0;
-		viewMovement.vert[1] = 0.01f;
-		viewMovement.vert[2] = 0;
+		viewMovement.x = 0;
+		viewMovement.y = 0.01f;
+		viewMovement.z = 0;
 		XMMATRIX _m = XMMatrixIdentity();
-		_m = XMMatrixTranslation(viewMovement.vert[0], viewMovement.vert[1], viewMovement.vert[2]);
+		_m = XMMatrixTranslation(viewMovement.x, viewMovement.y, viewMovement.z);
 		OotherM.view = _m * OotherM.view;
 	}
 	if (GetAsyncKeyState('F'))
 	{
-		viewMovement.vert[0] = 0;
-		viewMovement.vert[1] = -0.01f;
-		viewMovement.vert[2] = 0;
+		viewMovement.x = 0;
+		viewMovement.y = -0.01f;
+		viewMovement.z = 0;
 		XMMATRIX _m = XMMatrixIdentity();
-		_m = XMMatrixTranslation(viewMovement.vert[0], viewMovement.vert[1], viewMovement.vert[2]);
+		_m = XMMatrixTranslation(viewMovement.x, viewMovement.y, viewMovement.z);
 		OotherM.view = _m * OotherM.view;
 	}
 
@@ -512,7 +463,7 @@ bool DEMO_APP::Run()
 	if (GetAsyncKeyState(VK_NUMPAD4))
 	{
 		XMMATRIX _m = XMMatrixIdentity();
-		_m = _m * XMMatrixRotationY(DegToRad(-0.1f));
+		_m = _m * XMMatrixRotationY(ToRad(-0.1f));
 
 
 		float _x = OotherM.view.r[3].m128_f32[0];
@@ -532,7 +483,7 @@ bool DEMO_APP::Run()
 	else if (GetAsyncKeyState(VK_NUMPAD6))
 	{
 		XMMATRIX _m = XMMatrixIdentity();
-		_m = _m * XMMatrixRotationY(DegToRad(0.1f));
+		_m = _m * XMMatrixRotationY(ToRad(0.1f));
 
 		float _x = OotherM.view.r[3].m128_f32[0];
 		float _y = OotherM.view.r[3].m128_f32[1];
@@ -550,13 +501,68 @@ bool DEMO_APP::Run()
 
 	if (GetAsyncKeyState(VK_NUMPAD5))
 	{
-		OotherM.view = OotherM.view * XMMatrixRotationX(DegToRad(0.1f));
+		OotherM.view = OotherM.view * XMMatrixRotationX(ToRad(0.1f));
 	}
 	else if (GetAsyncKeyState(VK_NUMPAD8))
 	{
-		OotherM.view = OotherM.view * XMMatrixRotationX(DegToRad(-0.1f));
+		OotherM.view = OotherM.view * XMMatrixRotationX(ToRad(-0.1f));
+	}
+
+
+#pragma region Mouse 
+	if (GetAsyncKeyState(VK_RBUTTON))
+	{
+		POINT point;
+		if (GetCursorPos(&point))
+		{
+			long currMouseX = point.x;
+			long currMouseY = point.y;
+
+			if (lastmouseX == 0 && lastmouseY == 0)
+			{
+				lastmouseX = currMouseX;
+				lastmouseY = currMouseY;
+			}
+
+			int differenceX = currMouseX - lastmouseX;
+			int differenceY = currMouseY - lastmouseY;
+
+			lastmouseX = currMouseX;
+			lastmouseY = currMouseY;
+
+			XMMATRIX _m = XMMatrixIdentity();
+
+			_m = _m * XMMatrixRotationX(ToRad(differenceY * 0.2f));
+			float _x = OotherM.view.r[3].m128_f32[0];
+			float _y = OotherM.view.r[3].m128_f32[1];
+			float _z = OotherM.view.r[3].m128_f32[2];
+			OotherM.view.r[3].m128_f32[0] = 0;
+			OotherM.view.r[3].m128_f32[1] = 0;
+			OotherM.view.r[3].m128_f32[2] = 0;
+
+			
+			_m = _m * XMMatrixRotationY(ToRad(differenceX * 0.2f));
+
+			OotherM.view = _m * OotherM.view;
+
+			OotherM.view.r[3].m128_f32[0] = _x;
+			OotherM.view.r[3].m128_f32[1] = _y;
+			OotherM.view.r[3].m128_f32[2] = _z;
+
+
+			m_pitch -= differenceY;		// mouse y increases down, but pitch increases up
+			m_yaw -= differenceX;
+
+			m_pitch = (float)__max(-PI / 2.0f, m_pitch);
+			m_pitch = (float)__min(+PI / 2.0f, m_pitch);
+
+		}
 	}
 #pragma endregion
+
+
+
+#pragma endregion 
 
 #pragma region Buffer Clearing
 
@@ -572,51 +578,13 @@ bool DEMO_APP::Run()
 	devCon->ClearDepthStencilView(pDSV, D3D11_CLEAR_DEPTH, 1, 0);
 #pragma endregion
 
-#pragma region Star 1
-	float _z = star1World.r[3].m128_f32[2];
-	star1World.r[3].m128_f32[2] = 0;
-	star1World = star1World * XMMatrixRotationY(rotate);
-	star1World.r[3].m128_f32[2] = _z;
 
-	rotate =  (float)timething.Delta();
-	
-
-	timething.Signal();
-	OotherM.view = XMMatrixInverse(nullptr, OotherM.view);
-	D3D11_MAPPED_SUBRESOURCE mapRes;
-	ZeroMemory(&mapRes, sizeof(D3D11_MAPPED_SUBRESOURCE));
-	tester = devCon->Map(newBuf[0], NULL, D3D11_MAP_WRITE_DISCARD, NULL, &mapRes);
-	memcpy(mapRes.pData, &star1World, sizeof(star1World));
-
-	devCon->Unmap(newBuf[0], NULL);
-
-	ZeroMemory(&mapRes, sizeof(D3D11_MAPPED_SUBRESOURCE));
-	tester = devCon->Map(newBuf[1], NULL, D3D11_MAP_WRITE_DISCARD, NULL, &mapRes);
-	memcpy(mapRes.pData, &OotherM, sizeof(OotherM));
-	devCon->Unmap(newBuf[1], NULL);
-	OotherM.view = XMMatrixInverse(nullptr, OotherM.view);
-	
-	devCon->VSSetConstantBuffers(0, 2, newBuf);
-
-	UINT strides = sizeof(Simple_Vert);
-	UINT offsets = 0;
-
-	devCon->IASetVertexBuffers(0, 1, &triangleBuf, &strides, &offsets);
-
-	devCon->IASetIndexBuffer(indexBuf, DXGI_FORMAT_R16_UINT, offsets);
-	devCon->VSSetShader(vertexShader, 0, 0);
-	devCon->PSSetShader(pixelShader, 0, 0);
-	devCon->IASetInputLayout(layout);
-
-	devCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-	devCon->DrawIndexed(60, 0, 0);  
-#pragma endregion
 
 #pragma region Star 2
 
 	pyramid.Run(dev, devCon);
 	starTester.Run(dev, devCon);
+	starTester.RunNewPos(XMFLOAT3(0, 2, 5), dev, devCon);
 #pragma endregion
 
 	tester = swap->Present(0, 0);
@@ -631,20 +599,12 @@ bool DEMO_APP::Run()
 
 bool DEMO_APP::ShutDown()
 {
-	pyramid.Cleanup();
-	// TODO: PART 1 STEP 6
+
 	SAFE_RELEASE(devCon);
 	SAFE_RELEASE(dev);
 	SAFE_RELEASE(backBuffer);
 	SAFE_RELEASE(swap);
-	SAFE_RELEASE(layout);
-	SAFE_RELEASE(triangleBuf);
-	SAFE_RELEASE(indexBuf);
 	SAFE_RELEASE(pDSV);
-	SAFE_RELEASE(pixelShader);
-	SAFE_RELEASE(vertexShader);
-	SAFE_RELEASE(newBuf[0]);
-	SAFE_RELEASE(newBuf[1]);
 	SAFE_RELEASE(pDepthStencil);
 	SAFE_RELEASE(rasterStateSolid);
 	SAFE_RELEASE(rasterStateWire);
