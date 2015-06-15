@@ -7,22 +7,36 @@ struct ProjViewMatricies
 
 
 
-struct Light
+struct DirectionalLight
 {
-	Light()
+	DirectionalLight()
 	{
-		ZeroMemory(this, sizeof(Light));
+		ZeroMemory(this, sizeof(DirectionalLight));
+	}
+	XMFLOAT4 ambient;
+	XMFLOAT4 diffuse;
+	XMFLOAT4 dir;
+};
+
+struct PointLight
+{
+	PointLight()
+	{
+		ZeroMemory(this, sizeof(PointLight));
 	}
 	XMFLOAT4 ambient;
 	XMFLOAT4 diffuse;
 	XMFLOAT4 position;
+	XMFLOAT4 direction;
+	float range;
+	XMFLOAT3 attentuation;
 };
 
 struct FullLight
 {
 	FullLight()
 	{
-		ZeroMemory(this, sizeof(Light));
+		ZeroMemory(this, sizeof(FullLight));
 	}
 
 	XMFLOAT4 diffuse;
@@ -35,7 +49,8 @@ struct FullLight
 
 struct lightStruct
 {
-	Light  Directional;
+	DirectionalLight  Directional;
+	PointLight Point;
 };
 
 struct Lights

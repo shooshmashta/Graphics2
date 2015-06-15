@@ -45,7 +45,7 @@ struct ObjectModel
 	//all texture stuff
 	ID3D11ShaderResourceView * ObjTexture;
 	ID3D11SamplerState* ObjTextureSamplerState;
-	ID3D11Texture2D * textureResource;
+	ID3D11Resource * textureResource;
 
 	vector< unsigned int > vertexIndices, uvIndices, normalIndices;
 	

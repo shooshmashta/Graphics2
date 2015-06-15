@@ -8,9 +8,9 @@ ObjectModel::~ObjectModel()
 	}
 	if (hasTexture)
 	{
-		/*SAFE_RELEASE(textureResource);
-		SAFE_RELEASE(ObjTextureSamplerState);
-		SAFE_RELEASE(ObjTexture);*/
+		
+		SAFE_RELEASE(textureResource);
+		SAFE_RELEASE(ObjTexture);
 	}
 	SAFE_RELEASE(VertBuff);             // Models vertex buffer
 	SAFE_RELEASE(IndexBuff);            // Models index buffer
@@ -257,16 +257,20 @@ bool ObjectModel::Init(XMFLOAT3 pos,
 	
 	}
 #pragma endregion
-	
+
 	
 #pragma region ObjTextures
 	if (hasTexture)
 	{
-		ID3D11Resource * thingy = textureResource;
+
+		//ID3D11Resource * thingy = textureResource;
 		tester = CreateDDSTextureFromFile(dev, L"energy_seamless.dds", 
-			&thingy, &ObjTexture);
+			&textureResource, &ObjTexture);
 
-
+		if (tester)
+		{
+			tester;
+		}
 
 		////////TextureBuffer
 		////D3D11_TEXTURE2D_DESC descText;

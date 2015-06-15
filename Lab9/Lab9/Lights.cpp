@@ -12,9 +12,16 @@ bool Lights::Init(XMFLOAT3 pos,
 	ProjViewMatricies* _viewproj)
 {
 	//add pos later
-	light.Directional.position = XMFLOAT4(0.25f, 0.5f, -1.0f, 1.0f);
+	light.Directional.dir = XMFLOAT4(0.25f, 0.5f, -1.0f, 1.0f);
 	light.Directional.ambient = XMFLOAT4(0.2f, 0.2f, 0.2f, 1.0f);
 	light.Directional.diffuse = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+
+	light.Point.position = XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f);
+	light.Point.range = 100.0f;
+	light.Point.attentuation = XMFLOAT3(0.0f, 0.2f, 0.0f);
+	light.Point.ambient = XMFLOAT4(0.3f, 0.3f, 0.3f, 1.0f);
+	light.Point.diffuse = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+
 
 	HRESULT tester;
 	D3D11_BUFFER_DESC lightBufDesc;
