@@ -19,6 +19,7 @@ cbuffer OBJECT : register(b0)
 
 cbuffer SCENE : register(b1)
 {
+	float4x4 worldMatrix1;
 	float4x4 viewMatrix;
 	float4x4 projectionMatrix;
 };

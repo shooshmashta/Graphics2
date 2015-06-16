@@ -19,6 +19,8 @@
 #include "Textured_VS.csh"
 #include "Trivial_PS.csh"
 #include "Trivial_VS.csh"
+#include "Lit_PS.csh"
+#include "Lit_VS.csh"
 
 
 #include "XTime.h"
@@ -40,6 +42,7 @@ using namespace DirectX;
 #define zNear 0.1f
 #define zFar 100.0f
 
+#define NUM_LIGHTS 4
 #define NUM_PIXELS (RASTER_WIDTH * RASTER_HEIGHT)
 
 #define RED 0xff0000

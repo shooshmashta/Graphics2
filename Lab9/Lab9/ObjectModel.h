@@ -1,5 +1,5 @@
 #pragma once
-#include "Lights.h"
+#include "LotsOfLights.h"
 
 
 struct StrideStruct
@@ -16,8 +16,6 @@ struct Simple_Vert
 	//colors
 	XMFLOAT4 m_color = XMFLOAT4(0.0f, 0.0f, 0.0f, 0.0f);
 
-
-	//float u, v;
 };
 
 
@@ -57,6 +55,7 @@ struct ObjectModel
 	ProjViewMatricies * ProjView;
 
 	bool Init(XMFLOAT3 pos,
+		const wchar_t* path,
 		ID3D11Device * dev, 
 		ID3D11DeviceContext *devCon, 
 		ProjViewMatricies* _viewproj,

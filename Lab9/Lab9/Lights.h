@@ -2,7 +2,7 @@
 #include "Defines.h"
 struct ProjViewMatricies
 {
-	XMMATRIX view, proj;
+	XMMATRIX world, view, proj;
 };
 
 
@@ -13,6 +13,7 @@ struct DirectionalLight
 	{
 		ZeroMemory(this, sizeof(DirectionalLight));
 	}
+	
 	XMFLOAT4 ambient;
 	XMFLOAT4 diffuse;
 	XMFLOAT4 dir;
@@ -52,6 +53,26 @@ struct lightStruct
 	DirectionalLight  Directional;
 	PointLight Point;
 };
+
+
+struct PointLights
+{
+	PointLights()
+	{
+		ZeroMemory(this, sizeof(PointLights));
+	}
+	void Set(XMFLOAT4 point, XMFLOAT4 color);
+
+	XMFLOAT4 diffuse;
+	XMFLOAT4 dir;
+};
+
+
+
+
+
+
+
 
 struct Lights
 {

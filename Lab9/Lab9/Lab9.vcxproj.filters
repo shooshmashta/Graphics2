@@ -30,6 +30,9 @@
     <ClCompile Include="Lights.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="LotsOfLights.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="XTime.h">
@@ -56,11 +59,16 @@
     <ClInclude Include="Lights.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="LotsOfLights.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Trivial_VS.hlsl" />
     <FxCompile Include="Trivial_PS.hlsl" />
     <FxCompile Include="Textured_VS.hlsl" />
     <FxCompile Include="Textured_PS.hlsl" />
+    <FxCompile Include="Lit_VS.hlsl" />
+    <FxCompile Include="Lit_PS.hlsl" />
   </ItemGroup>
 </Project>

@@ -23,9 +23,7 @@ class DEMO_APP
 	HINSTANCE						application;
 	WNDPROC							appWndProc;
 	HWND							window;
-	// TODO: PART 1 STEP 2
 	ID3D11RenderTargetView			*backBuffer;
-
 	ID3D11Device					*dev;
 	IDXGISwapChain					*swap;
 	ID3D11DeviceContext				*devCon;
@@ -34,7 +32,7 @@ class DEMO_APP
 	D3D11_VIEWPORT					viewport;
 
 	HRESULT tester;
-	// TODO: PART 2 STEP 2
+
 	ID3D11RasterizerState * rasterStateSolid;
 	ID3D11RasterizerState * rasterStateWire;
 
@@ -43,7 +41,7 @@ class DEMO_APP
 	XMMATRIX star1World = XMMatrixIdentity();
 
 	bool wireOn = false;
-	
+
 
 	TriIndexBuffer starIndex[20];
 
@@ -59,24 +57,38 @@ class DEMO_APP
 	ID3D11DepthStencilView* pDSV;
 	D3D11_DEPTH_STENCIL_VIEW_DESC descDSV;
 	ID3D11Texture2D* pDepthStencil = NULL;
-	
+
 
 	ID3D11Buffer *newBuf[2];
 	XTime timething;
 
+	//lights
+#pragma region Lights
+
+	//directional
+	Lights light;
+
+	//4 point lights
+	LotsOfLights LightShader;
+	PointLights pointLights[4];
+
+	LightColor l_col;
+	LightPosition l_pos;
+
+#pragma endregion
+#pragma region Objects
+
+	//objects
+	ObjectModel surface;
 	ObjectModel pyramid;
 	ObjectModel starTester;
 	ProjViewMatricies OotherM;
+#pragma endregion
 
-	struct SEND_TO_VRAM
-	{
-		XMFLOAT4 point;
 
-	};
+
+
 	float rotate;
-
-	SEND_TO_VRAM toShader;
-	
 
 
 
@@ -98,14 +110,14 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 	XMMATRIX _m = XMMatrixIdentity();
 	_m = XMMatrixTranslation(0, 0, 4);
 	star1World = _m + star1World;
-	
+
 	ProjPerspectiveMatrixInit();
 	XMVECTOR mattemp;
 	mattemp.m128_f32[0] = (ProjPerspectiveMatrix.vert[0][0]);
 	mattemp.m128_f32[1] = (ProjPerspectiveMatrix.vert[0][1]);
 	mattemp.m128_f32[2] = (ProjPerspectiveMatrix.vert[0][2]);
 	mattemp.m128_f32[3] = (ProjPerspectiveMatrix.vert[0][3]);
-	
+
 	OotherM.proj.r[0] = mattemp;
 
 	mattemp.m128_f32[0] = (ProjPerspectiveMatrix.vert[1][0]);
@@ -128,10 +140,10 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 	mattemp.m128_f32[3] = (ProjPerspectiveMatrix.vert[3][3]);
 
 	OotherM.proj.r[3] = mattemp;
-	
-	OotherM.view =  XMMatrixIdentity();
 
-	
+	OotherM.view = XMMatrixIdentity();
+
+
 	rotate = 0;
 
 	bool everyother = true;
@@ -211,7 +223,7 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 	ShowWindow(window, SW_SHOW);
 	//********************* END WARNING ************************//
 
-	
+
 	//swap chain settings
 	scd.BufferCount = 1;                                    // one back buffer
 
@@ -234,7 +246,7 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 
 
 	const UINT num_requested_feature_levels = 1;
-	
+
 	tester = D3D11CreateDeviceAndSwapChain(NULL, D3D_DRIVER_TYPE_HARDWARE, NULL,
 		D3D11_CREATE_DEVICE_DEBUG, NULL, NULL, D3D11_SDK_VERSION,
 		&scd, &swap, &dev, NULL, &devCon);
@@ -263,10 +275,10 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 	//set viewport
 	devCon->RSSetViewports(1, &viewport);
 
-	
 
 
-	
+
+
 
 
 	D3D11_TEXTURE2D_DESC descDepth;
@@ -281,13 +293,13 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 	descDepth.Usage = D3D11_USAGE_DEFAULT;
 	descDepth.Format = DXGI_FORMAT_R32_TYPELESS;
 	descDepth.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
-	
+
 	tester = dev->CreateTexture2D(&descDepth, NULL, &pDepthStencil);
 	descDepth.SampleDesc.Count = 1;
 
 
 	D3D11_DEPTH_STENCIL_DESC dsDesc;
-	
+
 	// Depth test parameters
 	dsDesc.DepthEnable = true;
 	dsDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
@@ -330,7 +342,7 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 		&pDSV);  // [out] Depth stencil view
 	//stencilviews
 
-	  
+
 	D3D11_RASTERIZER_DESC rState;
 	ZeroMemory(&rState, sizeof(D3D11_RASTERIZER_DESC));
 	rState.FillMode = D3D11_FILL_MODE::D3D11_FILL_SOLID;
@@ -349,11 +361,37 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 	dev->CreateRasterizerState(&rState, &rasterStateWire);
 	devCon->RSSetState(rasterStateSolid);
 	pDSState->Release();
+
+#pragma region Lights
+
+
+
+	l_pos.lightPosition[0] = XMFLOAT4(-3.0f, 1.0f, 0, 1.0f);
+	l_col.diffuseColor[0]  = XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f);
+
+	l_pos.lightPosition[1] = XMFLOAT4(3.0f, 1.0f, 3.0f, 1.0f);
+	l_col.diffuseColor[1] = XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f);
+
+	l_pos.lightPosition[2] = XMFLOAT4(-3.0f, 1.0f, -3.0f, 1.0f);
+	l_col.diffuseColor[2] = XMFLOAT4(0, 0, 1.0f, 1.0f);
+
+	l_pos.lightPosition[3] = XMFLOAT4(3.0f, 1.0f, -3.0f, 1.0f);
+	l_col.diffuseColor[3] = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+
+	light.Init(XMFLOAT3(3, 3, 1), dev, devCon, &OotherM);
+
+	LightShader.Init(dev);
+	LightShader.SetParameters(devCon, &l_col, &l_pos);
 	
+
+#pragma endregion
 
 
 	pyramid.loadOBJ("pyramid1.obj");
-	pyramid.Init(XMFLOAT3(1, 1, 1), dev, devCon, &OotherM, true, true);
+	pyramid.Init(XMFLOAT3(1, 1, 1), L"energy_seamless.dds", dev, devCon, &OotherM, true, false);
+
+	surface.loadOBJ("Surface.obj");
+	surface.Init(XMFLOAT3(0, -1, 0), L"energy_seamless.dds", dev, devCon, &OotherM, true, true);
 
 	Simple_Vert _v;
 	StrideStruct _s;
@@ -374,7 +412,7 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 		starTester.vertexIndices.push_back(starIndex[i].i2);
 	}
 	//do not set to true
-	starTester.Init(XMFLOAT3(-1, 0, 1), dev, devCon, &OotherM, false, false);
+	starTester.Init(XMFLOAT3(-1, 0, 1), L"none", dev, devCon, &OotherM, false, false);
 }
 //****************************************************************************
 //**************************** EXECUTION *************************************
@@ -391,17 +429,17 @@ bool DEMO_APP::Run()
 			wireOn = !wireOn;
 			devCon->RSSetState(rasterStateSolid);
 		}
-		else 
+		else
 		{
 			wireOn = !wireOn;
 			devCon->RSSetState(rasterStateWire);
 		}
 	}
-	
+
 	XMFLOAT4 viewMovement;
 	if (GetAsyncKeyState('W'))
 	{
-		viewMovement.x= 0;
+		viewMovement.x = 0;
 		viewMovement.y = 0;
 		viewMovement.z = 0.01f;
 
@@ -540,7 +578,7 @@ bool DEMO_APP::Run()
 			OotherM.view.r[3].m128_f32[1] = 0;
 			OotherM.view.r[3].m128_f32[2] = 0;
 
-			
+
 			_m = _m * XMMatrixRotationY(ToRad(differenceX * 0.2f));
 
 			OotherM.view = _m * OotherM.view;
@@ -578,10 +616,17 @@ bool DEMO_APP::Run()
 	devCon->ClearDepthStencilView(pDSV, D3D11_CLEAR_DEPTH, 1, 0);
 #pragma endregion
 
+#pragma region Lights
+	LightShader.SetParameters(devCon, &l_col, &l_pos);
+	LightShader.Render(devCon, 4);
+
+	light.Run(dev, devCon);
+
+#pragma endregion
 
 
-#pragma region Star 2
-
+#pragma region objects
+	surface.Run(dev, devCon);
 	pyramid.Run(dev, devCon);
 	starTester.Run(dev, devCon);
 	starTester.RunNewPos(XMFLOAT3(0, 2, 5), dev, devCon);
@@ -599,7 +644,7 @@ bool DEMO_APP::Run()
 
 bool DEMO_APP::ShutDown()
 {
-
+	light.Cleanup();
 	SAFE_RELEASE(devCon);
 	SAFE_RELEASE(dev);
 	SAFE_RELEASE(backBuffer);

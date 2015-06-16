@@ -48,3 +48,10 @@ bool Lights::Run(ID3D11Device* dev,
 
 	return true;
 }
+
+
+void PointLights::Set(XMFLOAT4 point, XMFLOAT4 _diffuse)
+{
+	dir = point;
+	diffuse = _diffuse;
+}

@@ -2,10 +2,7 @@
 
 ObjectModel::~ObjectModel()
 {
-	if (hasLight)
-	{
-		light.Cleanup();
-	}
+	
 	if (hasTexture)
 	{
 		
@@ -122,33 +119,22 @@ bool ObjectModel::loadOBJ(
 }
 
 bool ObjectModel::Init(XMFLOAT3 pos,
+	const wchar_t* path,
 	ID3D11Device* dev,
 	ID3D11DeviceContext* devCon,
 	ProjViewMatricies* _viewproj,
 	bool texture, bool _light)
 {
-	
-
-	world.r[3] = XMVectorSet(pos.x, 0, pos.z, 1.0f);
-
 	ProjView = _viewproj;
-
 	hasTexture = texture;
 	hasLight = _light;
 
-
-
-	world.r[3] = XMVectorSet(pos.x, 0, pos.z, 1.0f);
-
-	ProjView = _viewproj;
-
-	hasTexture = texture;
+	world.r[3] = XMVectorSet(pos.x, pos.y, pos.z, 1.0f);
+	ProjView->world = world;
 
 #pragma region Obj Subresource
 	HRESULT tester = 0;
 
-
-	
 	if (hasTexture)
 	{
 		D3D11_BUFFER_DESC assigner;
@@ -159,17 +145,12 @@ bool ObjectModel::Init(XMFLOAT3 pos,
 		assigner.ByteWidth = sizeof(StrideStruct) * m_stride.size();
 		assigner.StructureByteStride = sizeof(StrideStruct);
 
-		
 		D3D11_SUBRESOURCE_DATA obj_verts;
 		obj_verts.pSysMem = &m_stride[0];
 		obj_verts.SysMemPitch = 0;
 		obj_verts.SysMemSlicePitch = 0;
 
 		tester = dev->CreateBuffer(&assigner, &obj_verts, &VertBuff);
-
-
-
-
 
 	}
 	else
@@ -183,7 +164,6 @@ bool ObjectModel::Init(XMFLOAT3 pos,
 		assigner.ByteWidth = sizeof(Simple_Vert) * vertexIndices.size();
 		assigner.StructureByteStride = sizeof(Simple_Vert);
 
-		
 		obj_verts.pSysMem = &v_vertices[0];
 		obj_verts.SysMemPitch = 0;
 		obj_verts.SysMemSlicePitch = 0;
@@ -197,7 +177,7 @@ bool ObjectModel::Init(XMFLOAT3 pos,
 
 #pragma region Obj Shader
 	// TODO: PART 2 STEP 7
-	if (!hasTexture)
+	if (!hasTexture && !hasTexture)
 	{
 		tester = dev->CreatePixelShader(Trivial_PS,
 			sizeof(Trivial_PS), NULL, &pixelShader);
@@ -214,6 +194,32 @@ bool ObjectModel::Init(XMFLOAT3 pos,
 
 		tester = dev->CreateInputLayout(vLayout, 2, Trivial_VS,
 			sizeof(Trivial_VS), &layout);
+	}
+	else if (hasLight)
+	{
+		tester = dev->CreatePixelShader(Lit_PS,
+			sizeof(Lit_PS), NULL, &pixelShader);
+		tester = dev->CreateVertexShader(Lit_VS,
+			sizeof(Lit_VS), NULL, &vertexShader);
+
+
+		D3D11_INPUT_ELEMENT_DESC vLayout[] =
+		{
+			{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0,
+			D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+
+			{ "UVS", 0, DXGI_FORMAT_R32G32_FLOAT, 0,
+			D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+
+			{ "NORMS", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0,
+			D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		};
+
+	
+		tester = dev->CreateInputLayout(vLayout, 3, Lit_VS,
+			sizeof(Lit_VS), &layout);
+
+		
 	}
 	else
 	{
@@ -235,25 +241,11 @@ bool ObjectModel::Init(XMFLOAT3 pos,
 		D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		};
 
-		D3D11_INPUT_ELEMENT_DESC pLayout[] =
-		{
-		{ "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0,
-		D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-
-		{ "UVS", 0, DXGI_FORMAT_R32G32_FLOAT, 0,
-		D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		
-		{ "NORMS", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0,
-		D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 }
-		};
 
 		tester = dev->CreateInputLayout(vLayout, 3, Textured_VS,
 			sizeof(Textured_VS), &layout);
 
-		if (hasLight)
-		{
-			light.Init(XMFLOAT3(3, 3, 1), dev, devCon, ProjView);
-		}
+		
 	
 	}
 #pragma endregion
@@ -264,13 +256,15 @@ bool ObjectModel::Init(XMFLOAT3 pos,
 	{
 
 		//ID3D11Resource * thingy = textureResource;
-		tester = CreateDDSTextureFromFile(dev, L"energy_seamless.dds", 
+		tester = CreateDDSTextureFromFile(dev, path,
 			&textureResource, &ObjTexture);
 
 		if (tester)
 		{
 			tester;
 		}
+
+
 
 		////////TextureBuffer
 		////D3D11_TEXTURE2D_DESC descText;
@@ -296,16 +290,7 @@ bool ObjectModel::Init(XMFLOAT3 pos,
 
 		////tester = dev->CreateTexture2D(&descText, textSub, &pTexture2D);
 
-		//D3D11_SAMPLER_DESC sampleDec;
-		//sampleDec.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-		//sampleDec.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
-		//sampleDec.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
-		//sampleDec.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
-		//sampleDec.MinLOD = (-FLT_MAX);
-		//sampleDec.MaxLOD = (FLT_MAX);
-		//sampleDec.MipLODBias = 0.0f;
-		//sampleDec.MaxAnisotropy = 1;
-		//sampleDec.ComparisonFunc = D3D11_COMPARISON_NEVER;
+		
 
 
 		//tester = dev->CreateSamplerState(&sampleDec, &ObjTextureSamplerState);
@@ -414,10 +399,7 @@ bool ObjectModel::Run(
 	{
 		strides = sizeof(StrideStruct);
 		offsets = 0;
-		if (hasLight)
-		{
-			light.Run(dev, devCon);
-		}
+		
 		devCon->PSSetShaderResources(0, 1, &ObjTexture);
 	}
 
