@@ -1,15 +1,34 @@
 
 
-struct Light
+struct Directional
 {
-	float3 dir;
+	float4 dir;
 	float4 ambient;
 	float4 diffuse;
-};
+}; 
+
+//struct Point
+//{
+//	float4 dir;
+//	
+//	float4 ambient;
+//	float4 diffuse; 
+//
+//	float4 pos;
+//
+//	float range;
+//	float3 attentuation;
+//	float4 diffuse;
+//	
+//
+//
+//
+//};
 
 cbuffer cbPerFrame
 {
-	Light light;
+	Directional dLight;
+	//Point pLight
 };
 
 //Texture2D ObjTexture;
@@ -35,12 +54,12 @@ float4 main(PS_IN input) : SV_TARGET
 {
 	input.norm = normalize(input.norm);
 
-	float4 diffuse = baseTexture.Sample(filters, input.tex);
+	float4 diffuse = baseTexture.Sample(filters, input.tex.xy);
 
 		float3 finalColor;
 
-	finalColor = diffuse * light.ambient;
-	finalColor += saturate(dot(light.dir, input.norm) * light.diffuse * diffuse);
+	finalColor = diffuse * dLight.ambient;
+	finalColor += saturate(dot(dLight.dir, input.norm) * dLight.diffuse * diffuse);
 
 	//return diffuse;
 
