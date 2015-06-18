@@ -49,17 +49,26 @@ struct ObjectModel
 	
 	vector<Simple_Vert> v_vertices;
 
-
 	vector<StrideStruct> m_stride;
 	
-	ProjViewMatricies * ProjView;
-
+	ProjViewMatricies  *ProjView;
+	
 	bool Init(XMFLOAT3 pos,
 		const wchar_t* path,
 		ID3D11Device * dev, 
 		ID3D11DeviceContext *devCon, 
 		ProjViewMatricies* _viewproj,
 		bool hasTextures, bool hasLights);
+
+	bool SkyInit(const wchar_t* path,
+		ID3D11Device * dev,
+		ID3D11DeviceContext *devCon,
+		ProjViewMatricies* _viewproj);
+
+	bool SkyRun(
+		ID3D11Device* dev,
+		ID3D11DeviceContext* devCon);
+
 	
 	bool Run(
 		ID3D11Device* dev,

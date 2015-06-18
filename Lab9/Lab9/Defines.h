@@ -21,7 +21,8 @@
 #include "Trivial_VS.csh"
 #include "Lit_PS.csh"
 #include "Lit_VS.csh"
-
+#include "Sky_PS.csh"
+#include "Sky_VS.csh"
 
 #include "XTime.h"
 

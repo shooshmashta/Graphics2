@@ -82,6 +82,9 @@ class DEMO_APP
 	ObjectModel surface;
 	ObjectModel pyramid;
 	ObjectModel starTester;
+
+	ObjectModel SkyBox;
+
 	ProjViewMatricies OotherM;
 #pragma endregion
 
@@ -238,7 +241,7 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 	scd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;      // how swap chain is to be used
 	scd.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;// | D3D11_CREATE_DEVICE_DEBUG;
 	scd.OutputWindow = window;                              // the window to be used
-	scd.SampleDesc.Count = 1;                               // how many multisamples
+	scd.SampleDesc.Count = 2;                               // how many multisamples
 	scd.SampleDesc.Quality = 0;
 	scd.Windowed = TRUE;                                    // windowed/full-screen mode
 	scd.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
@@ -286,8 +289,8 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 	descDepth.ArraySize = 1;
 	descDepth.MiscFlags = NULL;
 	descDepth.CPUAccessFlags = NULL;
+	descDepth.SampleDesc.Count = 2;
 	descDepth.SampleDesc.Quality = 0;
-	descDepth.SampleDesc.Count = 1;
 	descDepth.Width = BACKBUFFER_WIDTH;
 	descDepth.Height = BACKBUFFER_HEIGHT;
 	descDepth.Usage = D3D11_USAGE_DEFAULT;
@@ -333,7 +336,7 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 
 
 	descDSV.Format = DXGI_FORMAT_D32_FLOAT;
-	descDSV.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+	descDSV.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DMS;
 	descDSV.Texture2D.MipSlice = 0;
 	descDSV.Flags = NULL;
 
@@ -357,62 +360,85 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 	//rState.FillMode = D3D11_FILL_MODE::D3D11_FILL_WIREFRAME;
 	rState.AntialiasedLineEnable = false;
 	rState.MultisampleEnable = false;
-	rState.FrontCounterClockwise = true;
+	//rState.FrontCounterClockwise = true;
 	dev->CreateRasterizerState(&rState, &rasterStateWire);
 	devCon->RSSetState(rasterStateSolid);
 	pDSState->Release();
 
-#pragma region Lights
 
 
 
-	l_pos.lightPosition[0] = XMFLOAT4(-3.0f, 1.0f, 0, 1.0f);
-	l_col.diffuseColor[0]  = XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f);
 
-	l_pos.lightPosition[1] = XMFLOAT4(3.0f, 1.0f, 3.0f, 1.0f);
-	l_col.diffuseColor[1] = XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f);
-
-	l_pos.lightPosition[2] = XMFLOAT4(-3.0f, 1.0f, -3.0f, 1.0f);
-	l_col.diffuseColor[2] = XMFLOAT4(0, 0, 1.0f, 1.0f);
-
-	l_pos.lightPosition[3] = XMFLOAT4(3.0f, 1.0f, -3.0f, 1.0f);
-	l_col.diffuseColor[3] = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
-
-	light.Init(XMFLOAT3(3, 3, 1), dev, devCon, &OotherM);
-
-	LightShader.Init(dev);
-	LightShader.SetParameters(devCon, &l_col, &l_pos);
+#pragma region Objects
 	
-
-#pragma endregion
+	
+	SkyBox.loadOBJ("SkyBox.obj");
+	vector<unsigned int> skyIndex;
+	int l = SkyBox.vertexIndices.size() - 1;
+	for (size_t i = 0; i < SkyBox.vertexIndices.size(); i++)
+	{
+		skyIndex.push_back(SkyBox.vertexIndices[l]);
+		l--;
+	}
+	
+	SkyBox.vertexIndices = skyIndex;
+	SkyBox.SkyInit( L"skyb.dds", dev, devCon, &OotherM);
 
 
 	pyramid.loadOBJ("pyramid1.obj");
-	pyramid.Init(XMFLOAT3(1, 1, 1), L"energy_seamless.dds", dev, devCon, &OotherM, true, false);
+	pyramid.Init(XMFLOAT3(1, 1, 1), L"energy_seamless.dds", dev, devCon, &OotherM, false, true);
 
 	surface.loadOBJ("Surface.obj");
-	surface.Init(XMFLOAT3(0, -1, 0), L"energy_seamless.dds", dev, devCon, &OotherM, true, true);
-
+	surface.Init(XMFLOAT3(0, -2, 0), L"grass_seamless.dds", dev, devCon, &OotherM, false, true);
+	//
 	Simple_Vert _v;
 	StrideStruct _s;
 
 	for (size_t i = 0; i < 12; i++)
 	{
-		_v = star[i];
-
-		_s.m_vect = star[i].m_vect;
-
-		starTester.v_vertices.push_back(_v);
-		starTester.m_stride.push_back(_s);
+	_v = star[i];
+	
+	_s.m_vect = star[i].m_vect;
+	
+	starTester.v_vertices.push_back(_v);
+	starTester.m_stride.push_back(_s);
 	}
 	for (size_t i = 0; i < 20; i++)
 	{
-		starTester.vertexIndices.push_back(starIndex[i].i0);
-		starTester.vertexIndices.push_back(starIndex[i].i1);
-		starTester.vertexIndices.push_back(starIndex[i].i2);
+	starTester.vertexIndices.push_back(starIndex[i].i0);
+	starTester.vertexIndices.push_back(starIndex[i].i1);
+	starTester.vertexIndices.push_back(starIndex[i].i2);
 	}
-	//do not set to true
-	starTester.Init(XMFLOAT3(-1, 0, 1), L"none", dev, devCon, &OotherM, false, false);
+	////do not set to true
+	starTester.Init(XMFLOAT3(-1, 0, 1), L"none", dev, devCon, &OotherM, false, false); 
+	
+#pragma endregion
+
+#pragma region Lights
+
+	light.Init(XMFLOAT3(3, 3, 1), dev, devCon, &OotherM);
+
+
+
+	l_col.diffuseColor[0] = XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f);
+	l_col.diffuseColor[1] = XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f);
+	l_col.diffuseColor[2] = XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f);
+	l_col.diffuseColor[3] = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+
+	l_pos.lightPosition[0] = XMFLOAT4(1.0f,  3.0f, 0, 1.0f);
+	l_pos.lightPosition[1] = XMFLOAT4(3.0f,  3.0f, 3.0f, 1.0f);
+	l_pos.lightPosition[2] = XMFLOAT4(-3.0f, 3.0f, -3.0f, 1.0f);
+	l_pos.lightPosition[3] = XMFLOAT4(3.0f,  3.0f, -3.0f, 1.0f);
+
+
+	LightShader.Init(dev);
+	LightShader.SetParameters(devCon, &l_col, &l_pos);
+
+
+#pragma endregion
+
+	devCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
 }
 //****************************************************************************
 //**************************** EXECUTION *************************************
@@ -511,7 +537,7 @@ bool DEMO_APP::Run()
 		OotherM.view.r[3].m128_f32[1] = 0;
 		OotherM.view.r[3].m128_f32[2] = 0;
 
-		OotherM.view = _m * OotherM.view;
+		OotherM.view =  OotherM.view* _m;
 
 		OotherM.view.r[3].m128_f32[0] = _x;
 		OotherM.view.r[3].m128_f32[1] = _y;
@@ -530,7 +556,7 @@ bool DEMO_APP::Run()
 		OotherM.view.r[3].m128_f32[1] = 0;
 		OotherM.view.r[3].m128_f32[2] = 0;
 
-		OotherM.view = _m * OotherM.view;
+		OotherM.view =  OotherM.view * _m;
 
 		OotherM.view.r[3].m128_f32[0] = _x;
 		OotherM.view.r[3].m128_f32[1] = _y;
@@ -568,20 +594,25 @@ bool DEMO_APP::Run()
 			lastmouseX = currMouseX;
 			lastmouseY = currMouseY;
 
-			XMMATRIX _m = XMMatrixIdentity();
 
-			_m = _m * XMMatrixRotationX(ToRad(differenceY * 0.2f));
+			
 			float _x = OotherM.view.r[3].m128_f32[0];
 			float _y = OotherM.view.r[3].m128_f32[1];
 			float _z = OotherM.view.r[3].m128_f32[2];
+			
 			OotherM.view.r[3].m128_f32[0] = 0;
 			OotherM.view.r[3].m128_f32[1] = 0;
 			OotherM.view.r[3].m128_f32[2] = 0;
 
+			XMMATRIX _m = XMMatrixIdentity();
 
-			_m = _m * XMMatrixRotationY(ToRad(differenceX * 0.2f));
-
+			_m = _m * XMMatrixRotationX(ToRad(differenceY * 0.5f));
 			OotherM.view = _m * OotherM.view;
+			
+			
+			_m = XMMatrixIdentity();
+			_m = _m * XMMatrixRotationY(ToRad(differenceX * 0.5f));
+				OotherM.view =  OotherM.view * _m;
 
 			OotherM.view.r[3].m128_f32[0] = _x;
 			OotherM.view.r[3].m128_f32[1] = _y;
@@ -602,34 +633,48 @@ bool DEMO_APP::Run()
 
 #pragma endregion 
 
-#pragma region Buffer Clearing
+#pragma region Buffer Clearing And Skybox
 
 	devCon->OMSetRenderTargets(1, &backBuffer, pDSV);
 
 	devCon->RSSetViewports(1, &viewport);
 
-	FLOAT f[4];
-	//rgba
-	f[0] = 0; f[1] = 0; f[2] = 0.4f; f[3] = 0;
-
+	//BGColor
+	FLOAT f[4]{0, 0, 0, 0};
 	devCon->ClearRenderTargetView(backBuffer, f);
+
+
+#pragma region Sky Box
+
+	SkyBox.SkyRun(dev, devCon);
+
+#pragma endregion
+	
 	devCon->ClearDepthStencilView(pDSV, D3D11_CLEAR_DEPTH, 1, 0);
+	
+	
 #pragma endregion
 
-#pragma region Lights
-	LightShader.SetParameters(devCon, &l_col, &l_pos);
-	LightShader.Render(devCon, 4);
 
-	light.Run(dev, devCon);
-
-#pragma endregion
 
 
 #pragma region objects
+	
 	surface.Run(dev, devCon);
+
 	pyramid.Run(dev, devCon);
+
 	starTester.Run(dev, devCon);
 	starTester.RunNewPos(XMFLOAT3(0, 2, 5), dev, devCon);
+
+
+#pragma endregion
+#pragma region Lights
+	LightShader.SetParameters(devCon, &l_col, &l_pos);
+	//LightShader.Render(devCon, surface.vertexIndices.size(),surface.pixelShader, surface.vertexShader , surface.layout);
+	light.Run(dev, devCon);
+
+
 #pragma endregion
 
 	tester = swap->Present(0, 0);
@@ -644,7 +689,7 @@ bool DEMO_APP::Run()
 
 bool DEMO_APP::ShutDown()
 {
-	light.Cleanup();
+	//light.Cleanup();
 	SAFE_RELEASE(devCon);
 	SAFE_RELEASE(dev);
 	SAFE_RELEASE(backBuffer);

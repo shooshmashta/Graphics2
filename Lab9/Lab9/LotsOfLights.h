@@ -36,6 +36,6 @@ public:
 	PointLights sad;
 	bool SetParameters(ID3D11DeviceContext* devCon, LightColor* colors, LightPosition* positions);
 	void Shutdown();
-	bool Render(ID3D11DeviceContext* devCon, int lightcount);
+	bool Render(ID3D11DeviceContext* devCon, int lightcount, ID3D11PixelShader *pixelShader, ID3D11VertexShader *vertexShader, ID3D11InputLayout *layout);
 };
 

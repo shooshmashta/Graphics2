@@ -14,9 +14,10 @@ struct DirectionalLight
 		ZeroMemory(this, sizeof(DirectionalLight));
 	}
 	
+	XMFLOAT3 dir;
+	bool buff;
 	XMFLOAT4 ambient;
 	XMFLOAT4 diffuse;
-	XMFLOAT4 dir;
 };
 
 struct PointLight

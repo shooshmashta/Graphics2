@@ -3,14 +3,14 @@
 struct V_IN
 {
 	float3 posL : POSITION;
-	float3 tex : UVS;
+	float2 tex : UVS;
 	float3 norm : NORMS;
 };
 
 struct V_OUT
 {
 	float4 posH : SV_POSITION;
-	float3 tex : UVS;
+	float2 tex : UVS;
 	float3 norm : NORMS;
 
 };

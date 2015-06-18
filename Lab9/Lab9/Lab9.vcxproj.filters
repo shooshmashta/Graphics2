@@ -70,5 +70,11 @@
     <FxCompile Include="Textured_PS.hlsl" />
     <FxCompile Include="Lit_VS.hlsl" />
     <FxCompile Include="Lit_PS.hlsl" />
+    <FxCompile Include="Sky_VS.hlsl">
+      <Filter>Header Files</Filter>
+    </FxCompile>
+    <FxCompile Include="Sky_PS.hlsl">
+      <Filter>Header Files</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

@@ -12,7 +12,7 @@ bool Lights::Init(XMFLOAT3 pos,
 	ProjViewMatricies* _viewproj)
 {
 	//add pos later
-	light.Directional.dir = XMFLOAT4(0.25f, 0.5f, -1.0f, 1.0f);
+	light.Directional.dir = XMFLOAT3(0.25f, 0.5f, -1.0f);
 	light.Directional.ambient = XMFLOAT4(0.2f, 0.2f, 0.2f, 1.0f);
 	light.Directional.diffuse = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
 
