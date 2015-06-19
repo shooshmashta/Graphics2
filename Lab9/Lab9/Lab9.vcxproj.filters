@@ -76,5 +76,7 @@
     <FxCompile Include="Sky_PS.hlsl">
       <Filter>Header Files</Filter>
     </FxCompile>
+    <FxCompile Include="Combined_VS.hlsl" />
+    <FxCompile Include="Combined_PS.hlsl" />
   </ItemGroup>
 </Project>

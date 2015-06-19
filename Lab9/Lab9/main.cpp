@@ -82,7 +82,7 @@ class DEMO_APP
 	ObjectModel surface;
 	ObjectModel pyramid;
 	ObjectModel starTester;
-
+	ObjectModel knight;
 	ObjectModel SkyBox;
 
 	ProjViewMatricies OotherM;
@@ -242,7 +242,7 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 	scd.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;// | D3D11_CREATE_DEVICE_DEBUG;
 	scd.OutputWindow = window;                              // the window to be used
 	scd.SampleDesc.Count = 2;                               // how many multisamples
-	scd.SampleDesc.Quality = 0;
+	scd.SampleDesc.Quality = D3D11_STANDARD_MULTISAMPLE_PATTERN;
 	scd.Windowed = TRUE;                                    // windowed/full-screen mode
 	scd.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
 	scd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
@@ -290,7 +290,7 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 	descDepth.MiscFlags = NULL;
 	descDepth.CPUAccessFlags = NULL;
 	descDepth.SampleDesc.Count = 2;
-	descDepth.SampleDesc.Quality = 0;
+	descDepth.SampleDesc.Quality = D3D11_STANDARD_MULTISAMPLE_PATTERN;
 	descDepth.Width = BACKBUFFER_WIDTH;
 	descDepth.Height = BACKBUFFER_HEIGHT;
 	descDepth.Usage = D3D11_USAGE_DEFAULT;
@@ -337,7 +337,6 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 
 	descDSV.Format = DXGI_FORMAT_D32_FLOAT;
 	descDSV.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DMS;
-	descDSV.Texture2D.MipSlice = 0;
 	descDSV.Flags = NULL;
 
 	tester = dev->CreateDepthStencilView(pDepthStencil, // Depth stencil texture
@@ -386,11 +385,19 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 
 
 	pyramid.loadOBJ("pyramid1.obj");
-	pyramid.Init(XMFLOAT3(1, 1, 1), L"energy_seamless.dds", dev, devCon, &OotherM, false, true);
+	pyramid.LightsInit(XMFLOAT3(1, 1, 1), L"energy_seamless.dds", dev, devCon, &OotherM);// , true, false);
+
+	OotherM.world = OotherM.world* XMMatrixRotationX(180);
+
 
 	surface.loadOBJ("Surface.obj");
-	surface.Init(XMFLOAT3(0, -2, 0), L"grass_seamless.dds", dev, devCon, &OotherM, false, true);
-	//
+	surface.LightsInit(XMFLOAT3(0, -2, 0), L"grass_seamless.dds", dev, devCon, &OotherM);// , true, false);
+	
+	knight.loadOBJ("barrel1.obj");
+	OotherM.world = XMMatrixIdentity() * XMMatrixRotationZ(180) * XMMatrixScaling(0.2f, 0.2f, 0.2f);
+	knight.LightsInit(XMFLOAT3(0, -10, 20), L"barrel.dds", dev, devCon, &OotherM);
+	//knight.Init(XMFLOAT3(0, -10, 20), L"barrel.dds", dev, devCon, &OotherM, true, true);
+	
 	Simple_Vert _v;
 	StrideStruct _s;
 
@@ -410,14 +417,15 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 	starTester.vertexIndices.push_back(starIndex[i].i2);
 	}
 	////do not set to true
+	OotherM.world = XMMatrixIdentity();
 	starTester.Init(XMFLOAT3(-1, 0, 1), L"none", dev, devCon, &OotherM, false, false); 
 	
 #pragma endregion
 
 #pragma region Lights
 
-	light.Init(XMFLOAT3(3, 3, 1), dev, devCon, &OotherM);
-
+	//light.Init(XMFLOAT3(3, 3, 1), dev, devCon, &OotherM);
+	light.LightsInit(dev, devCon, &OotherM);
 
 
 	l_col.diffuseColor[0] = XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f);
@@ -431,8 +439,8 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 	l_pos.lightPosition[3] = XMFLOAT4(3.0f,  3.0f, -3.0f, 1.0f);
 
 
-	LightShader.Init(dev);
-	LightShader.SetParameters(devCon, &l_col, &l_pos);
+	//LightShader.Init(dev);
+	//LightShader.SetParameters(devCon, &l_col, &l_pos);
 
 
 #pragma endregion
@@ -660,9 +668,10 @@ bool DEMO_APP::Run()
 
 #pragma region objects
 	
-	surface.Run(dev, devCon);
-
-	pyramid.Run(dev, devCon);
+	surface.LightsRun(dev, devCon);
+	//knight.Run(dev, devCon);
+	knight.LightsRun(dev, devCon);
+	pyramid.LightsRun(dev, devCon);
 
 	starTester.Run(dev, devCon);
 	starTester.RunNewPos(XMFLOAT3(0, 2, 5), dev, devCon);
@@ -670,9 +679,9 @@ bool DEMO_APP::Run()
 
 #pragma endregion
 #pragma region Lights
-	LightShader.SetParameters(devCon, &l_col, &l_pos);
+	//light.Run(dev, devCon);
+	//LightShader.SetParameters(devCon, &l_col, &l_pos);
 	//LightShader.Render(devCon, surface.vertexIndices.size(),surface.pixelShader, surface.vertexShader , surface.layout);
-	light.Run(dev, devCon);
 
 
 #pragma endregion
@@ -689,6 +698,9 @@ bool DEMO_APP::Run()
 
 bool DEMO_APP::ShutDown()
 {
+
+	swap->SetFullscreenState(FALSE, NULL);    // switch to windowed mode
+
 	//light.Cleanup();
 	SAFE_RELEASE(devCon);
 	SAFE_RELEASE(dev);

@@ -65,6 +65,12 @@ struct ObjectModel
 		ID3D11DeviceContext *devCon,
 		ProjViewMatricies* _viewproj);
 
+	bool LightsInit(XMFLOAT3 pos, 
+		const wchar_t* path,
+		ID3D11Device * dev,
+		ID3D11DeviceContext *devCon,
+		ProjViewMatricies* _viewproj);
+
 	bool SkyRun(
 		ID3D11Device* dev,
 		ID3D11DeviceContext* devCon);
@@ -78,6 +84,11 @@ struct ObjectModel
 		ID3D11Device* dev,
 		ID3D11DeviceContext* devCon);
 	
+	bool LightsRun(
+		ID3D11Device* dev,
+		ID3D11DeviceContext* devCon);
+
+
 	bool loadOBJ(
 		const char * path
 		);

@@ -48,7 +48,7 @@ SamplerState filters : register(s0); // filter 0 using CLAMP, filter 1 using WRA
 // A simple optimization would be to pack both UV sets into a single register
 float4 main(PS_IN input) : SV_TARGET
 {
-	input.norm = normalize(input.norm);
+	input.norm = -normalize(input.norm);
 
 	float4 diffuse = baseTexture.Sample(filters, input.tex);
 

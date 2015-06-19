@@ -17,8 +17,10 @@ cbuffer LightPositionBuffer
 struct V_IN
 {
 	float4 position : POSITION;
-	float2 tex : UVS;
+	float4 tex : UVS;
+
 	float3 normal : NORMS;
+	//float padding
 
 };
 
@@ -45,7 +47,7 @@ PS_IN  main(V_IN input)
 	output.position = mul(output.position, view);
 	output.position = mul(output.position, proj);
 
-	output.tex = input.tex;
+	output.tex = input.tex.xy;
 
 
 	//add to PS instead of here

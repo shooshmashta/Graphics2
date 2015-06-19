@@ -16,8 +16,9 @@ struct DirectionalLight
 	
 	XMFLOAT3 dir;
 	bool buff;
+	
+	XMFLOAT4 color;
 	XMFLOAT4 ambient;
-	XMFLOAT4 diffuse;
 };
 
 struct PointLight
@@ -26,35 +27,53 @@ struct PointLight
 	{
 		ZeroMemory(this, sizeof(PointLight));
 	}
-	XMFLOAT4 ambient;
-	XMFLOAT4 diffuse;
-	XMFLOAT4 position;
+	XMFLOAT3 position;
+	float  PointRange;
+	
 	XMFLOAT4 direction;
-	float range;
+	
 	XMFLOAT3 attentuation;
+	float Padding;
+
+	XMFLOAT4 color;
+	XMFLOAT4 ambient;
 };
 
-struct FullLight
+struct SpotLight
 {
-	FullLight()
+	SpotLight()
 	{
-		ZeroMemory(this, sizeof(FullLight));
+		ZeroMemory(this, sizeof(SpotLight));
 	}
 
-	XMFLOAT4 diffuse;
+	XMFLOAT3 position;
+	float  PointRange;
+
+	XMFLOAT4 direction;
+
+
+	XMFLOAT4 attentuation;
+
+
+	XMFLOAT4 color;
 	XMFLOAT4 ambient;
-	XMFLOAT4 specular;
-	XMFLOAT4 emissive;
-	XMFLOAT4 power;
-	XMFLOAT4 position;
 };
 
 struct lightStruct
 {
 	DirectionalLight  Directional;
-	PointLight Point;
+	//PointLight Point;
+	//SpotLight Spot;
+	//SpecLight Spec;
 };
 
+struct AllofTheLights
+{
+	DirectionalLight  Directional;
+	PointLight Point;
+	SpotLight Spot;
+	//SpecLight Spec;
+};
 
 struct PointLights
 {
@@ -70,19 +89,28 @@ struct PointLights
 
 
 
-
-
-
-
-
 struct Lights
 {
 	
 	lightStruct light;
-
+	AllofTheLights fourlights;
 	ID3D11Buffer * LightBuffer;
 
+
+	/*ID3D11VertexShader* m_vertexShader;
+	ID3D11PixelShader* m_pixelShader;
+	ID3D11InputLayout* m_layout;
+	ID3D11SamplerState* m_sampleState;*/
+
+
+
+
 	bool Init(XMFLOAT3 pos,
+		ID3D11Device * dev,
+		ID3D11DeviceContext *devCon,
+		ProjViewMatricies* _viewproj);
+
+	bool LightsInit(
 		ID3D11Device * dev,
 		ID3D11DeviceContext *devCon,
 		ProjViewMatricies* _viewproj);
@@ -91,5 +119,18 @@ struct Lights
 		ID3D11Device* dev,
 		ID3D11DeviceContext* devCon);
 
-	void Cleanup();
+	bool LightsRun(
+		ID3D11Device* dev,
+		ID3D11DeviceContext* devCon);
+
+	bool SetParameters(
+		ID3D11DeviceContext* devCon, AllofTheLights* _lights);
+
+
+	Lights()
+	{
+		ZeroMemory(this, sizeof(Lights));
+	}
+	~Lights();
 };
+

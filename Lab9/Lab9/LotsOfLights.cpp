@@ -1,18 +1,16 @@
 #include "LotsOfLights.h"
 
-LotsOfLights::LotsOfLights()
-{
-	m_vertexShader = 0;
-	m_pixelShader = 0;
-	m_layout = 0;
-	m_sampleState = 0;
-	m_lightColBuf = 0;
-	m_lightPosBuf = 0;
-}
+//LotsOfLights::LotsOfLights()
+//{
+//	m_vertexShader = 0;
+//	m_pixelShader = 0;
+//	m_layout = 0;
+//	m_sampleState = 0;
+//	m_lightColBuf = 0;
+//	m_lightPosBuf = 0;
+//}
 
-LotsOfLights::LotsOfLights(const LotsOfLights& other)
-{
-}
+
 
 LotsOfLights::~LotsOfLights()
 {
@@ -65,10 +63,6 @@ bool LotsOfLights::SetParameters(ID3D11DeviceContext* devCon,
 {
 	HRESULT tester;
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
-	//
-	//unsigned int bufferNumber;
-
-//	tester = devCon->Map(m_lightPosBuf, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 
 	ZeroMemory(&mappedResource, sizeof(D3D11_MAPPED_SUBRESOURCE));
 	tester = devCon->Map(m_lightPosBuf, NULL, D3D11_MAP_WRITE_DISCARD, NULL, &mappedResource);

@@ -24,6 +24,9 @@
 #include "Sky_PS.csh"
 #include "Sky_VS.csh"
 
+#include "Combined_PS.csh"
+#include "Combined_VS.csh"
+
 #include "XTime.h"
 
 #pragma comment (lib, "d3d11.lib")

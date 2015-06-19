@@ -30,8 +30,10 @@ struct LotsOfLights
 
 public:
 
-	LotsOfLights();
-	LotsOfLights(const LotsOfLights&);
+	LotsOfLights()
+	{
+		ZeroMemory(this, sizeof(LotsOfLights));
+	}
 	~LotsOfLights();
 	PointLights sad;
 	bool SetParameters(ID3D11DeviceContext* devCon, LightColor* colors, LightPosition* positions);
