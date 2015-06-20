@@ -114,7 +114,9 @@ bool ObjectModel::loadOBJ(
 
 		StrideStruct _ss;
 		_ss.m_vect = v.m_vect;
+		uv.y = 1-uv.y;
 		_ss.v_uvs = uv;
+		
 		_ss.v_normals = norm;
 		m_stride.push_back(_ss);
 
@@ -184,9 +186,7 @@ bool ObjectModel::Init(XMFLOAT3 pos,
 
 
 #pragma region Obj Shader
-	// TODO: PART 2 STEP 7
-	if (!hasTexture && !hasLight)
-	{
+
 		tester = dev->CreatePixelShader(Trivial_PS,
 			sizeof(Trivial_PS), NULL, &pixelShader);
 		tester = dev->CreateVertexShader(Trivial_VS,
@@ -201,62 +201,9 @@ bool ObjectModel::Init(XMFLOAT3 pos,
 
 		tester = dev->CreateInputLayout(vLayout, 2, Trivial_VS,
 			sizeof(Trivial_VS), &layout);
-	}
+	
 
-	else if (hasTexture && !hasLight)
-	{
-		tester = dev->CreatePixelShader(Textured_PS,
-			sizeof(Textured_PS), NULL, &pixelShader);
-		tester = dev->CreateVertexShader(Textured_VS,
-			sizeof(Textured_VS), NULL, &vertexShader);
-
-
-		D3D11_INPUT_ELEMENT_DESC vLayout[] =
-		{
-			{ "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0,
-			D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-
-			{ "UVS", 0, DXGI_FORMAT_R32G32_FLOAT, 0,
-			D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-
-			{ "NORMS", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0,
-			D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		};
-
-
-		tester = dev->CreateInputLayout(vLayout, 3, Textured_VS,
-			sizeof(Textured_VS), &layout);
-
-
-
-	}
-	else if (hasLight)
-	{
-		tester = dev->CreatePixelShader(Lit_PS,
-			sizeof(Lit_PS), NULL, &pixelShader);
-
-		tester = dev->CreateVertexShader(Lit_VS,
-			sizeof(Lit_VS), NULL, &vertexShader);
-
-
-		D3D11_INPUT_ELEMENT_DESC vLayout[] =
-		{
-			{ "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0,
-			D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-
-			{ "UVS", 0, DXGI_FORMAT_R32G32_FLOAT, 0,
-			D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-
-			{ "NORMS", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0,
-			D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		};
-
-
-		tester = dev->CreateInputLayout(vLayout, 3, Lit_VS,
-			sizeof(Lit_VS), &layout);
-
-
-	}
+	
 #pragma endregion
 
 

@@ -15,7 +15,7 @@ struct DirectionalLight
 	}
 	
 	XMFLOAT3 dir;
-	bool buff;
+	float pad;
 	
 	XMFLOAT4 color;
 	XMFLOAT4 ambient;
@@ -47,13 +47,13 @@ struct SpotLight
 	}
 
 	XMFLOAT3 position;
-	float  PointRange;
+	float  spotRange;
 
-	XMFLOAT4 direction;
+	XMFLOAT3 direction;
+	float SpotCone;
 
-
-	XMFLOAT4 attentuation;
-
+	XMFLOAT3 attentuation;
+	float paddddd;
 
 	XMFLOAT4 color;
 	XMFLOAT4 ambient;
@@ -72,7 +72,7 @@ struct AllofTheLights
 	DirectionalLight  Directional;
 	PointLight Point;
 	SpotLight Spot;
-	//SpecLight Spec;
+	
 };
 
 struct PointLights
@@ -124,7 +124,7 @@ struct Lights
 		ID3D11DeviceContext* devCon);
 
 	bool SetParameters(
-		ID3D11DeviceContext* devCon, AllofTheLights* _lights);
+		ID3D11DeviceContext* devCon, AllofTheLights* _lights, ProjViewMatricies* _viewproj);
 
 
 	Lights()

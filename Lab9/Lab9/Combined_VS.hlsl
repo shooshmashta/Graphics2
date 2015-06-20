@@ -18,34 +18,34 @@ struct V_IN
 
 };
 
-struct PS_IN
+struct GS_OUT
 {
 	float4 position : SV_POSITION;
 	float2 tex : TEXCOORD0;
 	float3 normal : NORMAL;
-	float lightSwitch : LIGHT;
-	float4 worldPos : WORLD;
+	float4 worldPosition: WORLD;
+	float4 View : VIEW;
+	
 };
 
-PS_IN  main(V_IN input)
+GS_OUT  main(V_IN input)
 {
-	PS_IN output;
+	GS_OUT output;
 
 	float4 worldpos;
 	float4 outputPos = float4(input.position.xyz, 1.0f);
 
-	output.position = mul(outputPos, world);
-	output.position = mul(output.position, view);
-	output.position = mul(output.position, proj);
+	outputPos = mul(outputPos, world);
+	output.worldPosition = outputPos;
+	
+	outputPos = mul(outputPos, view);
+	
+	output.position = mul(outputPos, proj);
 
 	output.tex = input.tex;
-
-	output.worldPos = mul(outputPos, world);
-
 	output.normal = mul(input.normal, (float3x3) world);
-	output.normal = normalize(output.normal);
 
-//	output.lightSwitch = input.lightSwitch;
+	output.View = normalize(float4(view._41, view._42, view._43, view._44) - output.worldPosition);
 
 	return output;
 }

@@ -29,7 +29,8 @@ class DEMO_APP
 	ID3D11DeviceContext				*devCon;
 
 	DXGI_SWAP_CHAIN_DESC			scd;
-	D3D11_VIEWPORT					viewport;
+	D3D11_VIEWPORT					viewport[2];
+
 
 	HRESULT tester;
 
@@ -68,12 +69,8 @@ class DEMO_APP
 	//directional
 	Lights light;
 
-	//4 point lights
-	LotsOfLights LightShader;
-	PointLights pointLights[4];
-
-	LightColor l_col;
-	LightPosition l_pos;
+	
+	
 
 #pragma endregion
 #pragma region Objects
@@ -83,6 +80,7 @@ class DEMO_APP
 	ObjectModel pyramid;
 	ObjectModel starTester;
 	ObjectModel knight;
+	ObjectModel barrel;
 	ObjectModel SkyBox;
 
 	ProjViewMatricies OotherM;
@@ -266,19 +264,26 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 	devCon->OMSetRenderTargets(1, &backBuffer, NULL);
 
 	//viewport
-	ZeroMemory(&viewport, sizeof(D3D11_VIEWPORT));
+	ZeroMemory(&viewport[0], sizeof(D3D11_VIEWPORT));
 
-	viewport.MinDepth = 0.0f;
-	viewport.MaxDepth = 1.0f;
-	viewport.TopLeftX = 0;
-	viewport.TopLeftY = 0;
-	viewport.Width = BACKBUFFER_WIDTH;
-	viewport.Height = BACKBUFFER_HEIGHT;
+	viewport[0].MinDepth = 0.0f;
+	viewport[0].MaxDepth = 1.0f;
+	viewport[0].TopLeftX = 0;
+	viewport[0].TopLeftY = 0;
+	viewport[0].Width = BACKBUFFER_WIDTH;
+	viewport[0].Height = BACKBUFFER_HEIGHT/2;
+	
+	ZeroMemory(&viewport[1], sizeof(D3D11_VIEWPORT));
+
+	viewport[1].MinDepth = 0.0f;
+	viewport[1].MaxDepth = 1.0f;
+	viewport[1].TopLeftX = 0;
+	viewport[1].TopLeftY = BACKBUFFER_HEIGHT / 2;
+	viewport[1].Width = BACKBUFFER_WIDTH;
+	viewport[1].Height = BACKBUFFER_HEIGHT/2;
 
 	//set viewport
-	devCon->RSSetViewports(1, &viewport);
-
-
+	devCon->RSSetViewports(2, viewport);
 
 
 
@@ -385,7 +390,7 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 
 
 	pyramid.loadOBJ("pyramid1.obj");
-	pyramid.LightsInit(XMFLOAT3(1, 1, 1), L"energy_seamless.dds", dev, devCon, &OotherM);// , true, false);
+	pyramid.LightsInit(XMFLOAT3(0, 0, 5), L"energy_seamless.dds", dev, devCon, &OotherM);// , true, false);
 
 	OotherM.world = OotherM.world* XMMatrixRotationX(180);
 
@@ -393,10 +398,11 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 	surface.loadOBJ("Surface.obj");
 	surface.LightsInit(XMFLOAT3(0, -2, 0), L"grass_seamless.dds", dev, devCon, &OotherM);// , true, false);
 	
-	knight.loadOBJ("barrel1.obj");
+	knight.loadOBJ("knight.obj");
+	barrel.loadOBJ("barrel.obj");
 	OotherM.world = XMMatrixIdentity() * XMMatrixRotationZ(180) * XMMatrixScaling(0.2f, 0.2f, 0.2f);
-	knight.LightsInit(XMFLOAT3(0, -10, 20), L"barrel.dds", dev, devCon, &OotherM);
-	//knight.Init(XMFLOAT3(0, -10, 20), L"barrel.dds", dev, devCon, &OotherM, true, true);
+	knight.LightsInit(XMFLOAT3(1, -2, 2), L"knight.dds", dev, devCon, &OotherM);
+	barrel.LightsInit(XMFLOAT3(0, -10, 20), L"barrel.dds", dev, devCon, &OotherM);
 	
 	Simple_Vert _v;
 	StrideStruct _s;
@@ -424,24 +430,9 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 
 #pragma region Lights
 
-	//light.Init(XMFLOAT3(3, 3, 1), dev, devCon, &OotherM);
+	
 	light.LightsInit(dev, devCon, &OotherM);
-
-
-	l_col.diffuseColor[0] = XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f);
-	l_col.diffuseColor[1] = XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f);
-	l_col.diffuseColor[2] = XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f);
-	l_col.diffuseColor[3] = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
-
-	l_pos.lightPosition[0] = XMFLOAT4(1.0f,  3.0f, 0, 1.0f);
-	l_pos.lightPosition[1] = XMFLOAT4(3.0f,  3.0f, 3.0f, 1.0f);
-	l_pos.lightPosition[2] = XMFLOAT4(-3.0f, 3.0f, -3.0f, 1.0f);
-	l_pos.lightPosition[3] = XMFLOAT4(3.0f,  3.0f, -3.0f, 1.0f);
-
-
-	//LightShader.Init(dev);
-	//LightShader.SetParameters(devCon, &l_col, &l_pos);
-
+	light.SetParameters(devCon, nullptr, &OotherM);
 
 #pragma endregion
 
@@ -456,7 +447,7 @@ bool DEMO_APP::Run()
 {
 #pragma region Movement
 
-	if ((GetAsyncKeyState('I') & 0x1))
+	if ((GetAsyncKeyState('O') & 0x1))
 	{
 		if (wireOn)
 		{
@@ -470,6 +461,29 @@ bool DEMO_APP::Run()
 		}
 	}
 
+	if ((GetAsyncKeyState('I') & 0x1))
+	{
+
+	}
+
+	if ((GetAsyncKeyState('U')))
+	{
+		
+	}
+	else if ((GetAsyncKeyState('J')))
+	{
+
+	}
+
+	if ((GetAsyncKeyState('H')))
+	{
+
+	}
+	else if ((GetAsyncKeyState('K')))
+	{
+
+	}
+
 	XMFLOAT4 viewMovement;
 	if (GetAsyncKeyState('W'))
 	{
@@ -480,7 +494,6 @@ bool DEMO_APP::Run()
 		XMMATRIX _m = XMMatrixIdentity();
 		_m = XMMatrixTranslation(viewMovement.x, viewMovement.y, viewMovement.z);
 		OotherM.view = _m * OotherM.view;
-
 
 	}
 	if (GetAsyncKeyState('A'))
@@ -534,7 +547,7 @@ bool DEMO_APP::Run()
 
 	if (GetAsyncKeyState(VK_NUMPAD4))
 	{
-		XMMATRIX _m = XMMatrixIdentity();
+		/*XMMATRIX _m = XMMatrixIdentity();
 		_m = _m * XMMatrixRotationY(ToRad(-0.1f));
 
 
@@ -549,12 +562,16 @@ bool DEMO_APP::Run()
 
 		OotherM.view.r[3].m128_f32[0] = _x;
 		OotherM.view.r[3].m128_f32[1] = _y;
-		OotherM.view.r[3].m128_f32[2] = _z;
+		OotherM.view.r[3].m128_f32[2] = _z;*/
+
+		light.fourlights.Directional.dir.x++;
+		if (light.fourlights.Directional.dir.x >= 50)
+			light.fourlights.Directional.dir.x = 50;
 
 	}
 	else if (GetAsyncKeyState(VK_NUMPAD6))
 	{
-		XMMATRIX _m = XMMatrixIdentity();
+		/*XMMATRIX _m = XMMatrixIdentity();
 		_m = _m * XMMatrixRotationY(ToRad(0.1f));
 
 		float _x = OotherM.view.r[3].m128_f32[0];
@@ -568,16 +585,31 @@ bool DEMO_APP::Run()
 
 		OotherM.view.r[3].m128_f32[0] = _x;
 		OotherM.view.r[3].m128_f32[1] = _y;
-		OotherM.view.r[3].m128_f32[2] = _z;
+		OotherM.view.r[3].m128_f32[2] = _z;*/
+		light.fourlights.Directional.dir.x--;
+		if (light.fourlights.Directional.dir.x <= -50)
+		{
+			light.fourlights.Directional.dir.x = -50;
+		}
 	}
 
 	if (GetAsyncKeyState(VK_NUMPAD5))
 	{
-		OotherM.view = OotherM.view * XMMatrixRotationX(ToRad(0.1f));
+		//OotherM.view = OotherM.view * XMMatrixRotationX(ToRad(0.1f));
+		light.fourlights.Point.position.x -= 1 * 0.1f;
+		/*if (light.fourlights.Point.direction.x <= -50)
+		{
+			light.fourlights.Point.direction.x = -50;
+		}*/
 	}
 	else if (GetAsyncKeyState(VK_NUMPAD8))
 	{
-		OotherM.view = OotherM.view * XMMatrixRotationX(ToRad(-0.1f));
+		//OotherM.view = OotherM.view * XMMatrixRotationX(ToRad(-0.1f));
+		light.fourlights.Point.position.x += 1* 0.1f;
+		/*if (light.fourlights.Point.direction.x >= 50)
+		{
+			light.fourlights.Point.direction.x = 50;
+		}*/
 	}
 
 
@@ -641,11 +673,15 @@ bool DEMO_APP::Run()
 
 #pragma endregion 
 
+	
+	
+	
+
 #pragma region Buffer Clearing And Skybox
 
 	devCon->OMSetRenderTargets(1, &backBuffer, pDSV);
 
-	devCon->RSSetViewports(1, &viewport);
+	devCon->RSSetViewports(1, &viewport[0]);
 
 	//BGColor
 	FLOAT f[4]{0, 0, 0, 0};
@@ -669,26 +705,52 @@ bool DEMO_APP::Run()
 #pragma region objects
 	
 	surface.LightsRun(dev, devCon);
-	//knight.Run(dev, devCon);
+
 	knight.LightsRun(dev, devCon);
 	pyramid.LightsRun(dev, devCon);
 
-	starTester.Run(dev, devCon);
-	starTester.RunNewPos(XMFLOAT3(0, 2, 5), dev, devCon);
+	barrel.LightsRun(dev, devCon);
 
 
 #pragma endregion
 #pragma region Lights
-	//light.Run(dev, devCon);
-	//LightShader.SetParameters(devCon, &l_col, &l_pos);
-	//LightShader.Render(devCon, surface.vertexIndices.size(),surface.pixelShader, surface.vertexShader , surface.layout);
+	light.SetParameters(devCon, nullptr, &OotherM);
+	
+#pragma endregion
+#pragma region Viewport2
 
+
+	devCon->RSSetViewports(1, &viewport[1]);
+	SkyBox.SkyRun(dev, devCon);
 
 #pragma endregion
 
+	devCon->ClearDepthStencilView(pDSV, D3D11_CLEAR_DEPTH, 1, 0);
+
+	XMMATRIX view = OotherM.view;
+
+	OotherM.view = XMMatrixTranslation(0, -2, 16);
+#pragma region objects
+
+	surface.LightsRun(dev, devCon);
+
+	knight.LightsRun(dev, devCon);
+	pyramid.LightsRun(dev, devCon);
+
+	barrel.LightsRun(dev, devCon);
+
+
+#pragma endregion
+#pragma region Lights
+	 OotherM.view = view;
+	light.SetParameters(devCon, nullptr, &OotherM);
+
+#pragma endregion
+#pragma endregion
+
+
 	tester = swap->Present(0, 0);
 
-	// END OF PART 1
 	return true;
 }
 

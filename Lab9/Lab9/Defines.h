@@ -13,14 +13,13 @@
 #include <vector>
 #include <fstream>
 #include <istream>
+#include <thread>
+#include <mutex>
+#include <condition_variable>
 
 #include "DDSTextureLoader.h"
-#include "Textured_PS.csh"
-#include "Textured_VS.csh"
 #include "Trivial_PS.csh"
 #include "Trivial_VS.csh"
-#include "Lit_PS.csh"
-#include "Lit_VS.csh"
 #include "Sky_PS.csh"
 #include "Sky_VS.csh"
 

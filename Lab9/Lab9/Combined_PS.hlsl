@@ -4,7 +4,8 @@ struct DirectionalLight
 {
 	//float4 DirectDirection;
 	float3 DirectDirection;
-	float  DirectIntenisty;
+	float pad;
+	float4  DirectAmbient;
 	float4 DirectColor;
 };
 
@@ -35,6 +36,7 @@ struct SpotLight
 	float SpotPad;
 
 	float4 SpotColor;
+	float4 SpotAmbient;
 };
 
 cbuffer AllofTheLights
@@ -57,8 +59,10 @@ struct PS_IN
 	float4 position : SV_POSITION;
 	float2 tex : TEXCOORD0;
 	float3 normal : NORMAL;
+	float4 worldPosition: WORLD;
+	float4 View : VIEW;
 //	float  lightSwitch : LIGHT; 
-	float4 worldPos : WORLD;
+	//float4 worldPos : WORLD;
 };
 
 
@@ -67,35 +71,84 @@ SamplerState filters : register(s0);
 
 float4 main(PS_IN input) : SV_TARGET
 {
+	float3 normal = normalize(input.normal);
+	float4 texColor = baseTexture.Sample(filters, input.tex);
 
-	float3 WorldNorm = normalize(input.worldPos);
+	float3 location = normalize((-dLight.DirectDirection) + input.View.xyz);
+	float  intensity = max(pow(saturate(dot(normal, location)), 25.0f), 0);
+
 
 	//Directional Light
-	float3 DirectionalLightDirection = -normalize(dLight.DirectDirection.xyz);
-	float  DirectionalLightRatio = saturate(dot(-DirectionalLightDirection, input.normal));
-	float4 DirectionalResult = DirectionalLightRatio * dLight.DirectColor;
-
-	//PointLight
-	float3 PointLightDir = normalize(pLight.PointDirection.xyz - input.worldPos.xyz);
-	float  PointLightRatio = saturate(dot(PointLightDir, input.normal));
-	float4 PointResult = PointLightRatio * pLight.PointColor;
-
-	//SpotLight
-	float3 SpotLightDir = normalize(sLight.SpotDirection.xyz - input.worldPos.xyz);
-	float SpotSurfaceRatio = saturate(dot(SpotLightDir, sLight.SpotDirection));
-	float SpotFactor = (SpotSurfaceRatio > sLight.SpotCone) ? 1 : 0;
-	float SpotLightRatio = saturate(dot(SpotLightDir, input.normal));
-	float4 SpotResult = SpotFactor * SpotLightRatio * sLight.SpotColor;
+	float4 DirectionalResult = saturate(dot(location, normal) * texColor) + (dLight.DirectAmbient * texColor) + intensity;
 
 
-	//Specular
-	/*float4 SpecViewDir = normalize(worldPos - input.position.xyz);
-	float HALFVECTOR = normalize((-SpotLightDir) + SpecViewDir);
-	float INTENSITY  = max(pow(saturize(dot(input.normal, normalize(HALFVECTOR)))), 0.0f );
+		location = normalize((-pLight.PointDirection) + input.View.xyz);
+	intensity = max(pow(saturate(dot(normal, location)), 25.0f), 0);
+	////PointLight
+	float3 PointPixToLight = (pLight.PointPosition.xyz - input.worldPosition.xyz);
+	float  PointD = length(PointPixToLight); 
+	float4 PointAmbient = pLight.PointAmbient * texColor;
+	float4 PointResult = float4(0, 0,0, 0);
 	
-	float4 SpecResult = SpotLightRatio * INTENSITY;*/
+		if (PointD > pLight.PointRange)
+		{
+			PointResult = PointAmbient;
+		}
+		else
+		{
+
+			PointPixToLight = normalize(PointPixToLight);
+			float PointLightAmmount = dot(PointPixToLight, normal);
+
+			if (PointLightAmmount > 0.0f)
+			{
+				PointResult += PointLightAmmount * texColor * pLight.PointColor;
+				PointResult /= pLight.PointAttenuation.x + (pLight.PointAttenuation.y * PointD) + (pLight.PointAttenuation.z * PointD * PointD);
+			}
+			PointResult = saturate(PointResult + PointAmbient) + intensity;
+		}
 
 
-	return saturate(DirectionalResult + PointResult + SpotResult) * baseTexture.Sample(filters, input.tex.xy);
+	location = normalize((-sLight.SpotDirection) + input.View.xyz);
+	intensity = max(pow(saturate(dot(normal, location)), 25.0f), 0);
+
+	////SpotLight
+	float3 SpotPixToLight = (sLight.SpotPosition.xyz - input.worldPosition.xyz);
+	float  SpotD = length(SpotPixToLight);
+	float4 SpotAmbient = sLight.SpotAmbient * texColor;
+	float4 SpotResult = float4(0, 0, 0, 0);
+
+	if (SpotD > sLight.SpotRange)
+	{
+		SpotResult = SpotAmbient;
+	}
+	else
+	{
+
+		SpotPixToLight = normalize(SpotPixToLight);
+		float SpotLightAmmount = dot(SpotPixToLight, normal);
+
+		if (SpotLightAmmount > 0.0f)
+		{
+			SpotResult += SpotLightAmmount * texColor * sLight.SpotColor;
+			
+			SpotResult /= sLight.SpotAttenuation.x + (sLight.SpotAttenuation.y * SpotD) + (sLight.SpotAttenuation.z * SpotD * SpotD);
+
+			SpotResult *= pow(max(dot(-SpotPixToLight, sLight.SpotDirection), 0.0f), sLight.SpotCone);
+		}
+
+		SpotResult = saturate(SpotResult + SpotAmbient) + intensity;
+	}
+	
+
+	////Specular
+	///*float4 SpecViewDir = normalize(worldPos - input.position.xyz);
+	//float HALFVECTOR = normalize((-SpotLightDir) + SpecViewDir);
+	//float INTENSITY  = max(pow(saturize(dot(normal, normalize(HALFVECTOR)))), 0.0f );
+	//
+	//float4 SpecResult = SpotLightRatio * INTENSITY;*/
+
+
+	return (DirectionalResult + PointResult + SpotResult);
 
 }
