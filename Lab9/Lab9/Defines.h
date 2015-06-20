@@ -5,6 +5,8 @@
 #include <D3D11.h>
 #include <DirectXMath.h>
 #include <ctime>
+#include <stdio.h>      /* printf */
+#include <stdarg.h>
 
 #include <vector>
 #include <sstream>

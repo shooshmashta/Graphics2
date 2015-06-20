@@ -1,7 +1,7 @@
 //************************************************************
 //************ INCLUDES & DEFINES ****************************
 //************************************************************
-
+#define MODELCOUNT 5
 
 #include "Math.h"
 
@@ -13,7 +13,7 @@
 
 
 using namespace std;
-
+void LoadModelOBJThread(const char* path, ObjectModel * model);
 //************************************************************
 //************ SIMPLE WINDOWS APP CLASS **********************
 //************************************************************
@@ -31,6 +31,9 @@ class DEMO_APP
 	DXGI_SWAP_CHAIN_DESC			scd;
 	D3D11_VIEWPORT					viewport[2];
 
+	thread* threads;
+	mutex mutex;
+	condition_variable condVar;
 
 	HRESULT tester;
 
@@ -78,7 +81,6 @@ class DEMO_APP
 	//objects
 	ObjectModel surface;
 	ObjectModel pyramid;
-	ObjectModel starTester;
 	ObjectModel knight;
 	ObjectModel barrel;
 	ObjectModel SkyBox;
@@ -375,8 +377,38 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 
 #pragma region Objects
 	
+	threads = new thread[MODELCOUNT];
+	string names[MODELCOUNT];
+	int count = 0;
+	int *Count = &count;
+
+	threads[0] = thread(LoadModelOBJThread, "SkyBox.obj", &SkyBox);
+	threads[1] = thread(LoadModelOBJThread, "pyramid1.obj", &pyramid);
+	threads[2] = thread(LoadModelOBJThread, "Surface.obj", &surface);
+	threads[3] = thread(LoadModelOBJThread, "knight.obj", &knight);
+	threads[4] = thread(LoadModelOBJThread, "barrel.obj", &barrel);
+
+
+	for (int i = 0; i < MODELCOUNT; i++)
+	{
+		threads[i].join();
+	}
+
+	//SkyBox.loadOBJ("SkyBox.obj");
+	//pyramid.loadOBJ("pyramid1.obj");
+	//surface.loadOBJ("Surface.obj");
+	//knight.loadOBJ("knight.obj");
+	//barrel.loadOBJ("barrel.obj");
+
+
+
+
+
 	
-	SkyBox.loadOBJ("SkyBox.obj");
+
+
+
+
 	vector<unsigned int> skyIndex;
 	int l = SkyBox.vertexIndices.size() - 1;
 	for (size_t i = 0; i < SkyBox.vertexIndices.size(); i++)
@@ -387,24 +419,18 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 	
 	SkyBox.vertexIndices = skyIndex;
 	SkyBox.SkyInit( L"skyb.dds", dev, devCon, &OotherM);
-
-
-	pyramid.loadOBJ("pyramid1.obj");
 	pyramid.LightsInit(XMFLOAT3(0, 0, 5), L"energy_seamless.dds", dev, devCon, &OotherM);// , true, false);
-
 	OotherM.world = OotherM.world* XMMatrixRotationX(180);
-
-
-	surface.loadOBJ("Surface.obj");
 	surface.LightsInit(XMFLOAT3(0, -2, 0), L"grass_seamless.dds", dev, devCon, &OotherM);// , true, false);
-	
-	knight.loadOBJ("knight.obj");
-	barrel.loadOBJ("barrel.obj");
 	OotherM.world = XMMatrixIdentity() * XMMatrixRotationZ(180) * XMMatrixScaling(0.2f, 0.2f, 0.2f);
 	knight.LightsInit(XMFLOAT3(1, -2, 2), L"knight.dds", dev, devCon, &OotherM);
 	barrel.LightsInit(XMFLOAT3(0, -10, 20), L"barrel.dds", dev, devCon, &OotherM);
 	
-	Simple_Vert _v;
+
+
+
+
+	/*Simple_Vert _v;
 	StrideStruct _s;
 
 	for (size_t i = 0; i < 12; i++)
@@ -421,10 +447,10 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 	starTester.vertexIndices.push_back(starIndex[i].i0);
 	starTester.vertexIndices.push_back(starIndex[i].i1);
 	starTester.vertexIndices.push_back(starIndex[i].i2);
-	}
+	}*/
 	////do not set to true
 	OotherM.world = XMMatrixIdentity();
-	starTester.Init(XMFLOAT3(-1, 0, 1), L"none", dev, devCon, &OotherM, false, false); 
+	//starTester.Init(XMFLOAT3(-1, 0, 1), L"none", dev, devCon, &OotherM, false, false); 
 	
 #pragma endregion
 
@@ -814,4 +840,19 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	}
 	return DefWindowProc(hWnd, message, wParam, lParam);
 }
+
+
+
+
+void LoadModelOBJThread(const char* path, ObjectModel * model)
+{
+	model->loadOBJ(path);
+}
+
+
+
+
+
+
+
 //********************* END WARNING ************************//
