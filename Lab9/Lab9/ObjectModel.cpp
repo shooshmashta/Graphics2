@@ -3,16 +3,25 @@
 ObjectModel::~ObjectModel()
 {
 
-	if (hasTexture || hasLight)
-	{
+	
 		SAFE_RELEASE(textureResource);
 		SAFE_RELEASE(ObjTexture);
 		SAFE_RELEASE(ObjTextureSamplerState);
-	}
+
+		if (hasTrans)
+		{
+		
+			SAFE_RELEASE(Transparency);
+			//blenders
+			SAFE_RELEASE(CCWcullMode);
+			SAFE_RELEASE(CWcullMode);
+		
+		}
 
 	if (!hasLight)
 	{
 		SAFE_RELEASE(matrixLocationBuffer[0]);
+		
 	}
 
 	SAFE_RELEASE(matrixLocationBuffer[1]);
@@ -22,6 +31,7 @@ ObjectModel::~ObjectModel()
 	SAFE_RELEASE(pixelShader);
 	SAFE_RELEASE(vertexShader);
 
+	
 
 
 
@@ -279,6 +289,8 @@ bool ObjectModel::Init(XMFLOAT3 pos,
 
 	tester = dev->CreateBuffer(&othermatrix, NULL, &matrixLocationBuffer[1]);
 
+	
+
 
 #pragma endregion
 	return true;
@@ -511,8 +523,9 @@ bool ObjectModel::LightsInit(
 	const wchar_t* path,
 	ID3D11Device * dev,
 	ID3D11DeviceContext *devCon,
-	ProjViewMatricies* _viewproj)
+	ProjViewMatricies* _viewproj, bool _hasTrans)
 {
+	hasTrans = _hasTrans;
 	ProjView = _viewproj;
 	HRESULT tester = 0;
 	//hasTexture = t;
@@ -634,6 +647,50 @@ bool ObjectModel::LightsInit(
 
 
 #pragma endregion
+
+
+	if (hasTrans)
+	{
+		//blenders
+		D3D11_BLEND_DESC blendDesc;
+		ZeroMemory(&blendDesc, sizeof(blendDesc));
+
+		D3D11_RENDER_TARGET_BLEND_DESC rtbd;
+		ZeroMemory(&rtbd, sizeof(rtbd));
+
+		rtbd.BlendEnable = true;
+		rtbd.SrcBlend = D3D11_BLEND_SRC_COLOR;
+		rtbd.DestBlend = D3D11_BLEND_BLEND_FACTOR;
+		rtbd.BlendOp = D3D11_BLEND_OP_ADD;
+		rtbd.SrcBlendAlpha = D3D11_BLEND_ONE;
+		rtbd.DestBlendAlpha = D3D11_BLEND_ZERO;
+		rtbd.BlendOpAlpha = D3D11_BLEND_OP_ADD;
+		rtbd.RenderTargetWriteMask = D3D10_COLOR_WRITE_ENABLE_ALL;
+
+		blendDesc.AlphaToCoverageEnable = false;
+		blendDesc.RenderTarget[0] = rtbd;
+
+
+		dev->CreateBlendState(&blendDesc, &Transparency);
+
+
+		D3D11_RASTERIZER_DESC cmdesc;
+		ZeroMemory(&cmdesc, sizeof(D3D11_RASTERIZER_DESC));
+
+		cmdesc.FillMode = D3D11_FILL_SOLID;
+		cmdesc.CullMode = D3D11_CULL_BACK;
+		cmdesc.DepthClipEnable = true;
+		cmdesc.AntialiasedLineEnable = true;
+		cmdesc.MultisampleEnable = true;
+
+		cmdesc.FrontCounterClockwise = true;
+		tester = dev->CreateRasterizerState(&cmdesc, &CCWcullMode);
+
+		cmdesc.FrontCounterClockwise = false;
+		tester = dev->CreateRasterizerState(&cmdesc, &CWcullMode);
+
+	}
+
 	return true;
 }
 
@@ -660,12 +717,11 @@ bool ObjectModel::LightsRun(
 
 	devCon->VSSetConstantBuffers(0, 1, &matrixLocationBuffer[1]);
 
-
-
 	ProjView->view = XMMatrixInverse(nullptr, ProjView->view);
 
 	ProjView->world = XMMatrixIdentity();
 #pragma endregion
+
 
 
 
@@ -684,7 +740,37 @@ bool ObjectModel::LightsRun(
 	devCon->PSSetShader(pixelShader, 0, 0);
 
 	devCon->IASetInputLayout(layout);
-	devCon->DrawIndexed(vertexIndices.size(), 0, 0);
+
+	if (!hasTrans)
+	{
+		devCon->OMSetBlendState(0, 0, 0xffffffff);
+		devCon->DrawIndexed(vertexIndices.size(), 0, 0);
+
+	}
+	else
+	{
+		float blendFactor[4] = { 0.90f, 0.90f, 0.90f, 1.0f };
+		devCon->OMSetBlendState(Transparency, blendFactor, 0xffffffff);
+		devCon->RSSetState(CCWcullMode);
+
+		devCon->DrawIndexed(vertexIndices.size(), 0, 0);
+		
+		devCon->PSSetShaderResources(0, 1, &ObjTexture);
+		devCon->IASetVertexBuffers(0, 1, &VertBuff, &strides, &offsets);
+		devCon->IASetIndexBuffer(IndexBuff, DXGI_FORMAT_R32_UINT, offsets);
+
+		devCon->VSSetShader(vertexShader, 0, 0);
+		devCon->PSSetShader(pixelShader, 0, 0);
+
+		devCon->IASetInputLayout(layout);
+		devCon->RSSetState(CWcullMode);
+		devCon->DrawIndexed(vertexIndices.size(), 0, 0);
+
+		devCon->OMSetBlendState(0, 0, 0xffffffff);
+	}
+	
+
+
 
 
 #pragma endregion

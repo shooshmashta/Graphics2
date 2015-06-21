@@ -23,7 +23,7 @@ struct Simple_Vert
 
 struct ObjectModel
 {
-	
+
 	~ObjectModel();
 
 	XMMATRIX world = XMMatrixIdentity();
@@ -38,13 +38,22 @@ struct ObjectModel
 	ID3D11VertexShader *vertexShader;
 
 	//all light stuff
-	Lights light;
+	//Lights light;
 
 	//all texture stuff
 	ID3D11ShaderResourceView * ObjTexture;
 	ID3D11SamplerState* ObjTextureSamplerState;
 	ID3D11Resource * textureResource;
 
+	//blending
+	
+	ID3D11BlendState* Transparency;
+	ID3D11RasterizerState* CCWcullMode;
+	ID3D11RasterizerState* CWcullMode;
+	
+	bool hasTrans = false;
+	
+	
 	vector< unsigned int > vertexIndices, uvIndices, normalIndices;
 	
 	vector<Simple_Vert> v_vertices;
@@ -69,7 +78,7 @@ struct ObjectModel
 		const wchar_t* path,
 		ID3D11Device * dev,
 		ID3D11DeviceContext *devCon,
-		ProjViewMatricies* _viewproj);
+		ProjViewMatricies* _viewproj, bool trans);
 
 	bool SkyRun(
 		ID3D11Device* dev,

@@ -36,16 +36,16 @@ GS_OUT  main(V_IN input)
 	float4 outputPos = float4(input.position.xyz, 1.0f);
 
 	outputPos = mul(outputPos, world);
-	output.worldPosition = outputPos;
 	
+	output.worldPosition = outputPos;
 	outputPos = mul(outputPos, view);
+	output.View = outputPos;
 	
 	output.position = mul(outputPos, proj);
 
 	output.tex = input.tex;
 	output.normal = mul(input.normal, (float3x3) world);
 
-	output.View = normalize(float4(view._41, view._42, view._43, view._44) - output.worldPosition);
 
 	return output;
 }

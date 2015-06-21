@@ -73,16 +73,18 @@ float4 main(PS_IN input) : SV_TARGET
 {
 	float3 normal = normalize(input.normal);
 	float4 texColor = baseTexture.Sample(filters, input.tex);
-
-	float3 location = normalize((-dLight.DirectDirection) + input.View.xyz);
+	clip(texColor.a - 0.25f);
+	float ViewDir = normalize(input.View - input.worldPosition);
+	float3 location = normalize((-dLight.DirectDirection) + ViewDir);
 	float  intensity = max(pow(saturate(dot(normal, location)), 25.0f), 0);
 
 
-	//Directional Light
+//	Directional Light
 	float4 DirectionalResult = saturate(dot(location, normal) * texColor) + (dLight.DirectAmbient * texColor) + intensity;
+		//float4 DirectionalResult = float4(0, 0, 0, 0);
 
 
-		location = normalize((-pLight.PointDirection) + input.View.xyz);
+			location = normalize((-pLight.PointDirection) + ViewDir);
 	intensity = max(pow(saturate(dot(normal, location)), 25.0f), 0);
 	////PointLight
 	float3 PointPixToLight = (pLight.PointPosition.xyz - input.worldPosition.xyz);
@@ -109,46 +111,40 @@ float4 main(PS_IN input) : SV_TARGET
 		}
 
 
-	location = normalize((-sLight.SpotDirection) + input.View.xyz);
+		location = normalize((-sLight.SpotDirection) + ViewDir);
 	intensity = max(pow(saturate(dot(normal, location)), 25.0f), 0);
 
 	////SpotLight
 	float3 SpotPixToLight = (sLight.SpotPosition.xyz - input.worldPosition.xyz);
 	float  SpotD = length(SpotPixToLight);
 	float4 SpotAmbient = sLight.SpotAmbient * texColor;
-	float4 SpotResult = float4(0, 0, 0, 0);
+		float4 SpotResult = float4(0, 0, 0, 0);
 
-	if (SpotD > sLight.SpotRange)
-	{
+		/*if (SpotD > sLight.SpotRange)
+		{
 		SpotResult = SpotAmbient;
-	}
-	else
-	{
+		}
+		else
+		{
 
 		SpotPixToLight = normalize(SpotPixToLight);
 		float SpotLightAmmount = dot(SpotPixToLight, normal);
 
 		if (SpotLightAmmount > 0.0f)
 		{
-			SpotResult += SpotLightAmmount * texColor * sLight.SpotColor;
-			
-			SpotResult /= sLight.SpotAttenuation.x + (sLight.SpotAttenuation.y * SpotD) + (sLight.SpotAttenuation.z * SpotD * SpotD);
+		SpotResult += SpotLightAmmount * texColor * sLight.SpotColor;
 
-			SpotResult *= pow(max(dot(-SpotPixToLight, sLight.SpotDirection), 0.0f), sLight.SpotCone);
+		SpotResult /= sLight.SpotAttenuation.x + (sLight.SpotAttenuation.y * SpotD) + (sLight.SpotAttenuation.z * SpotD * SpotD);
+
+		SpotResult *= pow(max(dot(-SpotPixToLight, sLight.SpotDirection), 0.0f), sLight.SpotCone);
 		}
 
 		SpotResult = saturate(SpotResult + SpotAmbient) + intensity;
-	}
-	
+		}*/
 
-	////Specular
-	///*float4 SpecViewDir = normalize(worldPos - input.position.xyz);
-	//float HALFVECTOR = normalize((-SpotLightDir) + SpecViewDir);
-	//float INTENSITY  = max(pow(saturize(dot(normal, normalize(HALFVECTOR)))), 0.0f );
-	//
-	//float4 SpecResult = SpotLightRatio * INTENSITY;*/
+		float4 allColors = (DirectionalResult + PointResult + SpotResult);
+		
 
-
-	return (DirectionalResult + PointResult + SpotResult);
+	return allColors;
 
 }

@@ -16,6 +16,7 @@ using namespace std;
 void LoadModelOBJThread(const char* path, ObjectModel * model);
 void RunThread(ObjectModel * model, ID3D11Device * dev, ID3D11DeviceContext * defCon);
 void RunSkyThread(ObjectModel * model, ID3D11Device * dev, ID3D11DeviceContext * defCon, ID3D11DepthStencilView * pDSV);
+ObjectModel *RenderObjects(ObjectModel *first, ObjectModel *second, ID3D11Device *dev, ID3D11DeviceContext *devCon, ProjViewMatricies *viewProj);
 
 //************************************************************
 //************ SIMPLE WINDOWS APP CLASS **********************
@@ -91,6 +92,10 @@ class DEMO_APP
 	ObjectModel knight;
 	ObjectModel barrel;
 	ObjectModel SkyBox;
+	ObjectModel Tree;
+	//ObjectModel renderedTexture;
+
+
 
 	ProjViewMatricies OotherM;
 #pragma endregion
@@ -400,7 +405,7 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 	threads[2] = thread(LoadModelOBJThread, "Surface.obj", &surface);
 	threads[3] = thread(LoadModelOBJThread, "knight.obj", &knight);
 	threads[4] = thread(LoadModelOBJThread, "barrel.obj", &barrel);
-
+	Tree.loadOBJ("Tree.obj");
 
 	for (int i = 0; i < MODELCOUNT; i++)
 	{
@@ -432,13 +437,15 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 	
 	SkyBox.vertexIndices = skyIndex;
 	SkyBox.SkyInit( L"skyb.dds", dev, defCon, &OotherM);
-	pyramid.LightsInit(XMFLOAT3(0, 0, 5), L"energy_seamless.dds", dev, defCon, &OotherM);// , true, false);
-	OotherM.world = OotherM.world* XMMatrixRotationX(180);
-	surface.LightsInit(XMFLOAT3(0, -2, 0), L"grass_seamless.dds", dev, defCon, &OotherM);// , true, false);
-	OotherM.world = XMMatrixIdentity() * XMMatrixRotationZ(180) * XMMatrixScaling(0.2f, 0.2f, 0.2f);
-	knight.LightsInit(XMFLOAT3(1, -2, 2), L"knight.dds", dev, defCon, &OotherM);
-	barrel.LightsInit(XMFLOAT3(0, -10, 20), L"barrel.dds", dev, defCon, &OotherM);
+	Tree.LightsInit(XMFLOAT3(5, 0, 5), L"Tree.dds", dev, defCon, &OotherM, false);// , true, false);
 
+	pyramid.LightsInit(XMFLOAT3(0, 0, 5), L"energy_seamless.dds", dev, defCon, &OotherM, true);// , true, false);
+	OotherM.world = OotherM.world* XMMatrixRotationX(180);
+	surface.LightsInit(XMFLOAT3(0, -2, 0), L"grass_seamless.dds", dev, defCon, &OotherM, false);// , true, false);
+	OotherM.world = XMMatrixIdentity() * XMMatrixRotationZ(180) * XMMatrixScaling(0.2f, 0.2f, 0.2f);
+	knight.LightsInit(XMFLOAT3(1, -2, 2), L"knight.dds", dev, defCon, &OotherM, true);
+	barrel.LightsInit(XMFLOAT3(0, -10, 20), L"barrel.dds", dev, defCon, &OotherM, true);
+	
 	////do not set to true
 	OotherM.world = XMMatrixIdentity();
 	
@@ -629,6 +636,25 @@ bool DEMO_APP::Run()
 		}*/
 	}
 
+	if (GetAsyncKeyState(VK_NUMPAD7))
+	{
+		//OotherM.view = OotherM.view * XMMatrixRotationX(ToRad(0.1f));
+		light.fourlights.Point.direction.x -= 1 * 0.1f;
+		if (light.fourlights.Point.direction.x <= -50)
+		{
+		light.fourlights.Point.direction.x = -50;
+		}
+	}
+	else if (GetAsyncKeyState(VK_NUMPAD9))
+	{
+		//OotherM.view = OotherM.view * XMMatrixRotationX(ToRad(-0.1f));
+		light.fourlights.Point.direction.x += 1 * 0.1f;
+		if (light.fourlights.Point.direction.x >= 50)
+		{
+		light.fourlights.Point.direction.x = 50;
+		}
+	}
+
 
 #pragma region Mouse 
 	if (GetAsyncKeyState(VK_RBUTTON))
@@ -689,11 +715,9 @@ bool DEMO_APP::Run()
 
 
 #pragma endregion 
-
+	devCon->OMSetBlendState(0, 0, 0xffffffff);
 	defCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-	
-	
 
 #pragma region Buffer Clearing And Skybox
 
@@ -712,74 +736,48 @@ bool DEMO_APP::Run()
 
 #pragma endregion
 	
-	//defCon->ClearDepthStencilView(pDSV, D3D11_CLEAR_DEPTH, 1, 0);
-	
-	
 #pragma endregion
 
-
-
-
-#pragma region objects
-	
-	RunThread(&pyramid, dev, defCon);
-	RunThread(&surface, dev, defCon);
-	RunThread(&knight, dev, defCon);
+#pragma region Viewport1
 	RunThread(&barrel, dev, defCon);
+	RunThread(&pyramid, dev, defCon);
+	RunThread(&Tree, dev, defCon);
+	RunThread(&knight, dev, defCon);
+	RunThread(&surface, dev, defCon);
 
-	
+	/*ObjectModel* leftover;
+	leftover = RenderObjects(&barrel, &surface, dev, defCon, &OotherM);
+	leftover = RenderObjects(leftover, &pyramid, dev, defCon, &OotherM);
+	leftover = RenderObjects(leftover, &knight, dev, defCon, &OotherM);
 
+	leftover->LightsRun(dev, defCon);*/
 
-#pragma endregion
-#pragma region Lights
 	light.SetParameters(defCon, nullptr, &OotherM);
-	
+ 
 #pragma endregion
+	devCon->OMSetBlendState(0, 0, 0xffffffff);
 #pragma region Viewport2
-
 
 	defCon->RSSetViewports(1, &viewport[1]);
 	RunSkyThread(&SkyBox, dev, defCon, pDSV);
 
-#pragma endregion
-
-	//defCon->ClearDepthStencilView(pDSV, D3D11_CLEAR_DEPTH, 1, 0);
-
 	XMMATRIX view = OotherM.view;
-
 	OotherM.view = XMMatrixTranslation(0, -2, 16);
-#pragma region objects
 
-	threads[0] = thread(RunThread, &pyramid, dev, defCon);
-	threads[0].join();
-	threads[1] = thread(RunThread, &surface, dev, defCon);
-	threads[1].join();
-	threads[0] = thread(RunThread, &knight, dev, defCon);
-	threads[0].join();
-	threads[1] = thread(RunThread, &barrel, dev, defCon);
-	threads[1].join();
+	RunThread( &barrel, dev, defCon);
+	RunThread( &surface, dev, defCon);
+	RunThread( &pyramid, dev, defCon);
+	RunThread( &knight, dev, defCon);
 
-
-
-	
-#pragma endregion
-#pragma region Lights
 	 OotherM.view = view;
 	light.SetParameters(defCon, nullptr, &OotherM);
 
 #pragma endregion
-#pragma endregion
 
-
-
-	
 	defCon->FinishCommandList(true, &comList);
+	devCon->ExecuteCommandList(comList, true);
 	
-		devCon->ExecuteCommandList(comList, true);
-	
-		comList->Release();
-
-
+	comList->Release();
 	tester = swap->Present(0, 0);
 
 	return true;
@@ -868,6 +866,48 @@ void RunThread(ObjectModel * model, ID3D11Device * dev, ID3D11DeviceContext * de
 void RunSkyThread(ObjectModel * model, ID3D11Device * dev, ID3D11DeviceContext * defCon, ID3D11DepthStencilView * pDSV)
 {
 	model->SkyRun(dev, defCon, pDSV);
-	
 }
+
+
+ObjectModel *RenderObjects(ObjectModel *first, ObjectModel *second, ID3D11Device *dev, ID3D11DeviceContext *devCon, ProjViewMatricies *viewProj)
+{
+	XMVECTOR pos = { 0, 0, 0, 0 };
+
+	pos = XMVector3TransformCoord(pos, first->world);
+
+	float X = XMVectorGetX(pos) - XMVectorGetX(viewProj->view.r[3]);
+	float Y = XMVectorGetY(pos) - XMVectorGetY(viewProj->view.r[3]);
+	float Z = XMVectorGetZ(pos) - XMVectorGetZ(viewProj->view.r[3]);
+
+	float obj1Dist = X*X + Y*Y + Z*Z;
+
+
+	pos = XMVectorZero();
+
+	pos = XMVector3TransformCoord(pos, second->world);
+
+	X = XMVectorGetX(pos) - XMVectorGetX(viewProj->view.r[3]);
+	Y = XMVectorGetY(pos) - XMVectorGetY(viewProj->view.r[3]);
+	Z = XMVectorGetZ(pos) - XMVectorGetZ(viewProj->view.r[3]);
+
+	float obj2Dist = X*X + Y*Y + Z*Z;
+	
+	if (obj1Dist < obj2Dist)
+	{
+		//Switch the order in which the cubes are drawn
+		first->LightsRun(dev, devCon);
+		return second;
+	}
+	else
+	{
+		second->LightsRun(dev, devCon);
+		return first;
+	}
+
+}
+
+
+
+
+
 //********************* END WARNING ************************//
