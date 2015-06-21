@@ -73,7 +73,8 @@ struct ObjectModel
 
 	bool SkyRun(
 		ID3D11Device* dev,
-		ID3D11DeviceContext* devCon);
+		ID3D11DeviceContext* devCon,
+		ID3D11DepthStencilView * pDSV);
 
 	
 	bool Run(

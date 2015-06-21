@@ -14,6 +14,9 @@
 
 using namespace std;
 void LoadModelOBJThread(const char* path, ObjectModel * model);
+void RunThread(ObjectModel * model, ID3D11Device * dev, ID3D11DeviceContext * defCon);
+void RunSkyThread(ObjectModel * model, ID3D11Device * dev, ID3D11DeviceContext * defCon, ID3D11DepthStencilView * pDSV);
+
 //************************************************************
 //************ SIMPLE WINDOWS APP CLASS **********************
 //************************************************************
@@ -27,11 +30,15 @@ class DEMO_APP
 	ID3D11Device					*dev;
 	IDXGISwapChain					*swap;
 	ID3D11DeviceContext				*devCon;
-
+	ID3D11DeviceContext				*defCon;
+	ID3D11CommandList				*comList;
 	DXGI_SWAP_CHAIN_DESC			scd;
 	D3D11_VIEWPORT					viewport[2];
 
 	thread* threads;
+	thread* RunThreads;
+
+
 	mutex mutex;
 	condition_variable condVar;
 
@@ -254,6 +261,12 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 		D3D11_CREATE_DEVICE_DEBUG, NULL, NULL, D3D11_SDK_VERSION,
 		&scd, &swap, &dev, NULL, &devCon);
 
+	
+		dev->CreateDeferredContext(0, &defCon);
+	
+
+
+
 	////get the address of the back buffer
 	ID3D11Texture2D *_BackBuffer = nullptr;
 	tester = swap->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&_BackBuffer));
@@ -263,7 +276,7 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 	_BackBuffer->Release();
 
 	//set the render target as the back buffer
-	devCon->OMSetRenderTargets(1, &backBuffer, NULL);
+	defCon->OMSetRenderTargets(1, &backBuffer, NULL);
 
 	//viewport
 	ZeroMemory(&viewport[0], sizeof(D3D11_VIEWPORT));
@@ -285,7 +298,7 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 	viewport[1].Height = BACKBUFFER_HEIGHT/2;
 
 	//set viewport
-	devCon->RSSetViewports(2, viewport);
+	defCon->RSSetViewports(2, viewport);
 
 
 
@@ -339,7 +352,7 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 	ID3D11DepthStencilState * pDSState;
 	tester = dev->CreateDepthStencilState(&dsDesc, &pDSState);
 
-	devCon->OMSetDepthStencilState(pDSState, 1);
+	defCon->OMSetDepthStencilState(pDSState, 1);
 
 
 	descDSV.Format = DXGI_FORMAT_D32_FLOAT;
@@ -368,7 +381,7 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 	rState.MultisampleEnable = false;
 	//rState.FrontCounterClockwise = true;
 	dev->CreateRasterizerState(&rState, &rasterStateWire);
-	devCon->RSSetState(rasterStateSolid);
+	defCon->RSSetState(rasterStateSolid);
 	pDSState->Release();
 
 
@@ -418,51 +431,29 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 	}
 	
 	SkyBox.vertexIndices = skyIndex;
-	SkyBox.SkyInit( L"skyb.dds", dev, devCon, &OotherM);
-	pyramid.LightsInit(XMFLOAT3(0, 0, 5), L"energy_seamless.dds", dev, devCon, &OotherM);// , true, false);
+	SkyBox.SkyInit( L"skyb.dds", dev, defCon, &OotherM);
+	pyramid.LightsInit(XMFLOAT3(0, 0, 5), L"energy_seamless.dds", dev, defCon, &OotherM);// , true, false);
 	OotherM.world = OotherM.world* XMMatrixRotationX(180);
-	surface.LightsInit(XMFLOAT3(0, -2, 0), L"grass_seamless.dds", dev, devCon, &OotherM);// , true, false);
+	surface.LightsInit(XMFLOAT3(0, -2, 0), L"grass_seamless.dds", dev, defCon, &OotherM);// , true, false);
 	OotherM.world = XMMatrixIdentity() * XMMatrixRotationZ(180) * XMMatrixScaling(0.2f, 0.2f, 0.2f);
-	knight.LightsInit(XMFLOAT3(1, -2, 2), L"knight.dds", dev, devCon, &OotherM);
-	barrel.LightsInit(XMFLOAT3(0, -10, 20), L"barrel.dds", dev, devCon, &OotherM);
-	
+	knight.LightsInit(XMFLOAT3(1, -2, 2), L"knight.dds", dev, defCon, &OotherM);
+	barrel.LightsInit(XMFLOAT3(0, -10, 20), L"barrel.dds", dev, defCon, &OotherM);
 
-
-
-
-	/*Simple_Vert _v;
-	StrideStruct _s;
-
-	for (size_t i = 0; i < 12; i++)
-	{
-	_v = star[i];
-	
-	_s.m_vect = star[i].m_vect;
-	
-	starTester.v_vertices.push_back(_v);
-	starTester.m_stride.push_back(_s);
-	}
-	for (size_t i = 0; i < 20; i++)
-	{
-	starTester.vertexIndices.push_back(starIndex[i].i0);
-	starTester.vertexIndices.push_back(starIndex[i].i1);
-	starTester.vertexIndices.push_back(starIndex[i].i2);
-	}*/
 	////do not set to true
 	OotherM.world = XMMatrixIdentity();
-	//starTester.Init(XMFLOAT3(-1, 0, 1), L"none", dev, devCon, &OotherM, false, false); 
 	
 #pragma endregion
 
 #pragma region Lights
 
 	
-	light.LightsInit(dev, devCon, &OotherM);
-	light.SetParameters(devCon, nullptr, &OotherM);
+	light.LightsInit(dev, defCon, &OotherM);
+	light.SetParameters(defCon, nullptr, &OotherM);
+
+	
 
 #pragma endregion
 
-	devCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 }
 //****************************************************************************
@@ -699,28 +690,29 @@ bool DEMO_APP::Run()
 
 #pragma endregion 
 
-	
+	defCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
 	
 	
 
 #pragma region Buffer Clearing And Skybox
 
-	devCon->OMSetRenderTargets(1, &backBuffer, pDSV);
+	defCon->OMSetRenderTargets(1, &backBuffer, pDSV);
 
-	devCon->RSSetViewports(1, &viewport[0]);
+	defCon->RSSetViewports(1, &viewport[0]);
 
 	//BGColor
-	FLOAT f[4]{0, 0, 0, 0};
-	devCon->ClearRenderTargetView(backBuffer, f);
+	FLOAT f[4]{0, 1, 0, 0};
+	defCon->ClearRenderTargetView(backBuffer, f);
 
 
 #pragma region Sky Box
-
-	SkyBox.SkyRun(dev, devCon);
+	RunSkyThread(&SkyBox, dev, defCon, pDSV);
+	
 
 #pragma endregion
 	
-	devCon->ClearDepthStencilView(pDSV, D3D11_CLEAR_DEPTH, 1, 0);
+	//defCon->ClearDepthStencilView(pDSV, D3D11_CLEAR_DEPTH, 1, 0);
 	
 	
 #pragma endregion
@@ -730,49 +722,62 @@ bool DEMO_APP::Run()
 
 #pragma region objects
 	
-	surface.LightsRun(dev, devCon);
+	RunThread(&pyramid, dev, defCon);
+	RunThread(&surface, dev, defCon);
+	RunThread(&knight, dev, defCon);
+	RunThread(&barrel, dev, defCon);
 
-	knight.LightsRun(dev, devCon);
-	pyramid.LightsRun(dev, devCon);
-
-	barrel.LightsRun(dev, devCon);
+	
 
 
 #pragma endregion
 #pragma region Lights
-	light.SetParameters(devCon, nullptr, &OotherM);
+	light.SetParameters(defCon, nullptr, &OotherM);
 	
 #pragma endregion
 #pragma region Viewport2
 
 
-	devCon->RSSetViewports(1, &viewport[1]);
-	SkyBox.SkyRun(dev, devCon);
+	defCon->RSSetViewports(1, &viewport[1]);
+	RunSkyThread(&SkyBox, dev, defCon, pDSV);
 
 #pragma endregion
 
-	devCon->ClearDepthStencilView(pDSV, D3D11_CLEAR_DEPTH, 1, 0);
+	//defCon->ClearDepthStencilView(pDSV, D3D11_CLEAR_DEPTH, 1, 0);
 
 	XMMATRIX view = OotherM.view;
 
 	OotherM.view = XMMatrixTranslation(0, -2, 16);
 #pragma region objects
 
-	surface.LightsRun(dev, devCon);
+	threads[0] = thread(RunThread, &pyramid, dev, defCon);
+	threads[0].join();
+	threads[1] = thread(RunThread, &surface, dev, defCon);
+	threads[1].join();
+	threads[0] = thread(RunThread, &knight, dev, defCon);
+	threads[0].join();
+	threads[1] = thread(RunThread, &barrel, dev, defCon);
+	threads[1].join();
 
-	knight.LightsRun(dev, devCon);
-	pyramid.LightsRun(dev, devCon);
-
-	barrel.LightsRun(dev, devCon);
 
 
+	
 #pragma endregion
 #pragma region Lights
 	 OotherM.view = view;
-	light.SetParameters(devCon, nullptr, &OotherM);
+	light.SetParameters(defCon, nullptr, &OotherM);
 
 #pragma endregion
 #pragma endregion
+
+
+
+	
+	defCon->FinishCommandList(true, &comList);
+	
+		devCon->ExecuteCommandList(comList, true);
+	
+		comList->Release();
 
 
 	tester = swap->Present(0, 0);
@@ -790,6 +795,8 @@ bool DEMO_APP::ShutDown()
 	swap->SetFullscreenState(FALSE, NULL);    // switch to windowed mode
 
 	//light.Cleanup();
+	SAFE_RELEASE(defCon);
+	//SAFE_RELEASE(comList);
 	SAFE_RELEASE(devCon);
 	SAFE_RELEASE(dev);
 	SAFE_RELEASE(backBuffer);
@@ -851,8 +858,16 @@ void LoadModelOBJThread(const char* path, ObjectModel * model)
 
 
 
+void RunThread(ObjectModel * model, ID3D11Device * dev, ID3D11DeviceContext * defCon)
+{
+	model->LightsRun(dev, defCon);
+	
+}
 
 
-
-
+void RunSkyThread(ObjectModel * model, ID3D11Device * dev, ID3D11DeviceContext * defCon, ID3D11DepthStencilView * pDSV)
+{
+	model->SkyRun(dev, defCon, pDSV);
+	
+}
 //********************* END WARNING ************************//

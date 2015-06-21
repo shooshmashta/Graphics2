@@ -466,7 +466,8 @@ bool ObjectModel::SkyInit(const wchar_t* path,
 
 bool ObjectModel::SkyRun(
 	ID3D11Device* dev,
-	ID3D11DeviceContext* devCon)
+	ID3D11DeviceContext* devCon, 
+	ID3D11DepthStencilView * pDSV)
 {
 
 	UINT strides;
@@ -499,7 +500,7 @@ bool ObjectModel::SkyRun(
 	devCon->IASetInputLayout(layout);
 
 	devCon->DrawIndexed(vertexIndices.size(), 0, 0);
-
+	devCon->ClearDepthStencilView(pDSV, D3D11_CLEAR_DEPTH, 1, 0);
 	return true;
 }
 
