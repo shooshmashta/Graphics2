@@ -81,8 +81,8 @@ class DEMO_APP
 	//directional
 	Lights light;
 
-	
-	
+
+
 
 #pragma endregion
 #pragma region Objects
@@ -276,9 +276,9 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 		D3D11_CREATE_DEVICE_DEBUG, NULL, NULL, D3D11_SDK_VERSION,
 		&scd, &swap, &dev, NULL, &devCon);
 
-	
-		dev->CreateDeferredContext(0, &defCon);
-	
+
+	dev->CreateDeferredContext(0, &defCon);
+
 
 
 
@@ -301,8 +301,8 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 	viewport[0].TopLeftX = 0;
 	viewport[0].TopLeftY = 0;
 	viewport[0].Width = BACKBUFFER_WIDTH;
-	viewport[0].Height = BACKBUFFER_HEIGHT/2;
-	
+	viewport[0].Height = BACKBUFFER_HEIGHT / 2;
+
 	ZeroMemory(&viewport[1], sizeof(D3D11_VIEWPORT));
 
 	viewport[1].MinDepth = 0.0f;
@@ -310,7 +310,7 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 	viewport[1].TopLeftX = 0;
 	viewport[1].TopLeftY = BACKBUFFER_HEIGHT / 2;
 	viewport[1].Width = BACKBUFFER_WIDTH;
-	viewport[1].Height = BACKBUFFER_HEIGHT/2;
+	viewport[1].Height = BACKBUFFER_HEIGHT / 2;
 
 	//set viewport
 	defCon->RSSetViewports(2, viewport);
@@ -404,7 +404,7 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 
 
 #pragma region Objects
-	
+
 	threads = new thread[MODELCOUNT];
 	string names[MODELCOUNT];
 	int count = 0;
@@ -430,8 +430,8 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 	//barrel.loadOBJ("barrel.obj");
 
 
-	
-	
+
+
 
 
 
@@ -443,18 +443,18 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 		skyIndex.push_back(SkyBox.vertexIndices[l]);
 		l--;
 	}
-	
+
 	SkyBox.vertexIndices = skyIndex;
-	SkyBox.SkyInit( L"skyb.dds", dev, defCon, &OotherM);
+	SkyBox.SkyInit(L"skyb.dds", dev, defCon, &OotherM);
 	Tree.LightsInit(XMFLOAT3(0, -2, 10), L"Tree.dds", dev, defCon, &OotherM, true);// , true, false);
 
-	pyramid.LightsInit(XMFLOAT3(0, 0, 5), L"energy_seamless.dds", dev, defCon, &OotherM, true);// , true, false);
+	pyramid.LightsInit(XMFLOAT3(0, 0, 5), L"Floor_Diffuse.dds", dev, defCon, &OotherM, true);// , true, false);
 	OotherM.world = XMMatrixIdentity() * XMMatrixRotationX(180);
 	surface.LightsInit(XMFLOAT3(0, -3, 0), L"grass_seamless.dds", dev, defCon, &OotherM, false);// , true, false);
 	//OotherM.world = XMMatrixIdentity() * XMMatrixRotationZ(180) * XMMatrixScaling(0.2f, 0.2f, 0.2f);
 	knight.LightsInit(XMFLOAT3(1, -2, 2), L"knight.dds", dev, defCon, &OotherM, true);
 	barrel.LightsInit(XMFLOAT3(0, -10, 20), L"barrel.dds", dev, defCon, &OotherM, false);
-	
+
 
 
 	//*******************************************************************************************
@@ -489,7 +489,7 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 
 	shaderResourceViewDesc.Format = TV_Desc.Format;
 	shaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DMS;
-	
+
 
 	dev->CreateShaderResourceView(TV_TextureMap, &shaderResourceViewDesc, &TV_SRVMap);
 
@@ -506,20 +506,20 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 
 
 
-	
+
 	//OotherM.world = XMMatrixIdentity();
 	//OotherM.view = XMMatrixIdentity();
-	
+
 #pragma endregion
 
 #pragma region Lights
 
-	
+
 	light.LightsInit(dev, defCon, &OotherM);
 	light.SetParameters(defCon, nullptr, &OotherM);
 
 
-	
+
 	surface.ObjTexture->Release();
 	surface.ObjTexture = TV_SRVMap;
 #pragma endregion
@@ -555,7 +555,7 @@ bool DEMO_APP::Run()
 
 	if ((GetAsyncKeyState('U')))
 	{
-		
+
 	}
 	else if ((GetAsyncKeyState('J')))
 	{
@@ -686,16 +686,16 @@ bool DEMO_APP::Run()
 		light.fourlights.Point.position.x -= 1 * 0.1f;
 		/*if (light.fourlights.Point.direction.x <= -50)
 		{
-			light.fourlights.Point.direction.x = -50;
+		light.fourlights.Point.direction.x = -50;
 		}*/
 	}
 	else if (GetAsyncKeyState(VK_NUMPAD8))
 	{
 		//OotherM.view = OotherM.view * XMMatrixRotationX(ToRad(-0.1f));
-		light.fourlights.Point.position.x += 1* 0.1f;
+		light.fourlights.Point.position.x += 1 * 0.1f;
 		/*if (light.fourlights.Point.direction.x >= 50)
 		{
-			light.fourlights.Point.direction.x = 50;
+		light.fourlights.Point.direction.x = 50;
 		}*/
 	}
 
@@ -705,7 +705,7 @@ bool DEMO_APP::Run()
 		light.fourlights.Point.direction.x -= 1 * 0.1f;
 		if (light.fourlights.Point.direction.x <= -50)
 		{
-		light.fourlights.Point.direction.x = -50;
+			light.fourlights.Point.direction.x = -50;
 		}
 	}
 	else if (GetAsyncKeyState(VK_NUMPAD9))
@@ -714,7 +714,7 @@ bool DEMO_APP::Run()
 		light.fourlights.Point.direction.x += 1 * 0.1f;
 		if (light.fourlights.Point.direction.x >= 50)
 		{
-		light.fourlights.Point.direction.x = 50;
+			light.fourlights.Point.direction.x = 50;
 		}
 	}
 
@@ -741,11 +741,11 @@ bool DEMO_APP::Run()
 			lastmouseY = currMouseY;
 
 
-			
+
 			float _x = OotherM.view.r[3].m128_f32[0];
 			float _y = OotherM.view.r[3].m128_f32[1];
 			float _z = OotherM.view.r[3].m128_f32[2];
-			
+
 			OotherM.view.r[3].m128_f32[0] = 0;
 			OotherM.view.r[3].m128_f32[1] = 0;
 			OotherM.view.r[3].m128_f32[2] = 0;
@@ -754,11 +754,11 @@ bool DEMO_APP::Run()
 
 			_m = _m * XMMatrixRotationX(ToRad(differenceY * 0.5f));
 			OotherM.view = _m * OotherM.view;
-			
-			
+
+
 			_m = XMMatrixIdentity();
 			_m = _m * XMMatrixRotationY(ToRad(differenceX * 0.5f));
-				OotherM.view =  OotherM.view * _m;
+			OotherM.view = OotherM.view * _m;
 
 			OotherM.view.r[3].m128_f32[0] = _x;
 			OotherM.view.r[3].m128_f32[1] = _y;
@@ -776,9 +776,7 @@ bool DEMO_APP::Run()
 
 	FLOAT f[4]{0, 0, 0, 0};
 	ObjectModel* leftover;
-		defCon->RSSetViewports(1, &viewport[0]);
-
-
+	defCon->RSSetViewports(1, &viewport[0]);
 
 	//*******************************************************************************************
 	//*********************************Render To Texture Objects*********************************
@@ -795,19 +793,11 @@ bool DEMO_APP::Run()
 	leftover = RenderObjects(leftover, &knight, dev, defCon, &OotherM);
 	leftover->LightsRun(dev, defCon);
 
-	//light.SetParameters(defCon, nullptr, &OotherM);
-
-	
-
+	light.SetParameters(defCon, nullptr, &OotherM);
 
 	//*******************************************************************************************
 	//*******************************************************************************************
 	//*******************************************************************************************
-
-
-
-
-
 
 #pragma region Buffer Clearing And Skybox
 
@@ -815,16 +805,16 @@ bool DEMO_APP::Run()
 
 
 	//BGColor
-	
+
 	defCon->ClearRenderTargetView(backBuffer, f);
 
 
 #pragma region Sky Box
 	RunSkyThread(&SkyBox, dev, defCon, pDSV);
-	
+
 
 #pragma endregion
-	
+
 #pragma endregion
 
 #pragma region Viewport1
@@ -837,7 +827,7 @@ bool DEMO_APP::Run()
 	leftover->LightsRun(dev, defCon);
 	//surface.FloorRun(dev, devCon);
 	light.SetParameters(defCon, nullptr, &OotherM);
- 
+
 #pragma endregion
 	devCon->OMSetBlendState(0, 0, 0xffffffff);
 #pragma region Viewport2
@@ -854,17 +844,17 @@ bool DEMO_APP::Run()
 	leftover = RenderObjects(leftover, &knight, dev, defCon, &OotherM);
 	leftover->LightsRun(dev, defCon);
 
-	 OotherM.view = view;
+	OotherM.view = view;
 	light.SetParameters(defCon, nullptr, &OotherM);
 
 #pragma endregion
 
 	defCon->FinishCommandList(true, &comList);
 	devCon->ExecuteCommandList(comList, true);
-	
+
 	comList->Release();
 	tester = swap->Present(0, 0);
-
+	
 	return true;
 }
 
@@ -947,7 +937,7 @@ void LoadModelOBJThread(const char* path, ObjectModel * model)
 void RunThread(ObjectModel * model, ID3D11Device * dev, ID3D11DeviceContext * defCon)
 {
 	model->LightsRun(dev, defCon);
-	
+
 }
 
 
@@ -979,7 +969,7 @@ ObjectModel *RenderObjects(ObjectModel *first, ObjectModel *second, ID3D11Device
 	Z = XMVectorGetZ(pos) - XMVectorGetZ(viewProj->view.r[3]);
 
 	float obj2Dist = X*X + Y*Y + Z*Z;
-	
+
 	if (obj1Dist > obj2Dist)
 	{
 		//Switch the order in which the cubes are drawn

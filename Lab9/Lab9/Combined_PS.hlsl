@@ -73,11 +73,16 @@ float4 main(PS_IN input) : SV_TARGET
 {
 	float3 normal = normalize(input.normal);
 	float4 texColor = baseTexture.Sample(filters, input.tex);
-	clip(texColor.a - 0.25f);
 	float ViewDir = normalize(input.View - input.worldPosition);
 	float3 location = normalize((-dLight.DirectDirection) + ViewDir);
 	float  intensity = max(pow(saturate(dot(normal, location)), 25.0f), 0);
 
+	//clip(texColor.a - 0.25f);
+
+	if (texColor.a < 0.25f)
+	{
+		discard;
+	}
 
 //	Directional Light
 	float4 DirectionalResult = saturate(dot(location, normal) * texColor) + (dLight.DirectAmbient * texColor) + intensity;

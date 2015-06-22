@@ -474,8 +474,7 @@ bool ObjectModel::LightsRun(
 
 	ProjView->world = XMMatrixIdentity();
 #pragma endregion
-
-
+	
 
 
 #pragma region VS and PS
@@ -524,6 +523,7 @@ bool ObjectModel::LightsRun(
 
 
 #pragma endregion
+	
 	return true;
 }
 
@@ -675,7 +675,7 @@ bool ObjectModel::FloorRun(
 	ProjView->world = XMMatrixIdentity();
 #pragma endregion
 
-
+	ID3D11ShaderResourceView *nullshader = NULL;
 
 
 #pragma region VS and PS
@@ -684,21 +684,20 @@ bool ObjectModel::FloorRun(
 
 	strides = sizeof(StrideStruct);
 	offsets = 0;
-	devCon->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_POINTLIST);
-	//devCon->PSSetShaderResources(0, 1, &ObjTexture);
+
 	devCon->IASetVertexBuffers(0, 1, &VertBuff, &strides, &offsets);
 	devCon->IASetIndexBuffer(IndexBuff, DXGI_FORMAT_R32_UINT, offsets);
 
+	devCon->PSSetShaderResources(0, 1, &ObjTexture);
 	devCon->VSSetShader(vertexShader, 0, 0);
 	devCon->PSSetShader(pixelShader, 0, 0);
 
 	devCon->IASetInputLayout(layout);
 
+	devCon->OMSetBlendState(0, 0, 0xffffffff);
 	devCon->DrawIndexed(vertexIndices.size(), 0, 0);
-
 	
-	
-
+	devCon->PSSetShaderResources(0, 1, &nullshader);
 
 #pragma endregion
 	return true;
