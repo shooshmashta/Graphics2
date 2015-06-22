@@ -1,7 +1,7 @@
 //************************************************************
 //************ INCLUDES & DEFINES ****************************
 //************************************************************
-#define MODELCOUNT 5
+#define MODELCOUNT 6
 
 #include "Math.h"
 
@@ -405,7 +405,7 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 	threads[2] = thread(LoadModelOBJThread, "Surface.obj", &surface);
 	threads[3] = thread(LoadModelOBJThread, "knight.obj", &knight);
 	threads[4] = thread(LoadModelOBJThread, "barrel.obj", &barrel);
-	Tree.loadOBJ("Tree.obj");
+	threads[5] = thread(LoadModelOBJThread, "Tree.obj", &Tree);
 
 	for (int i = 0; i < MODELCOUNT; i++)
 	{
@@ -437,17 +437,18 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 	
 	SkyBox.vertexIndices = skyIndex;
 	SkyBox.SkyInit( L"skyb.dds", dev, defCon, &OotherM);
-	Tree.LightsInit(XMFLOAT3(5, 0, 5), L"Tree.dds", dev, defCon, &OotherM, false);// , true, false);
+	Tree.LightsInit(XMFLOAT3(0, -2, 10), L"Tree.dds", dev, defCon, &OotherM, true);// , true, false);
 
 	pyramid.LightsInit(XMFLOAT3(0, 0, 5), L"energy_seamless.dds", dev, defCon, &OotherM, true);// , true, false);
 	OotherM.world = OotherM.world* XMMatrixRotationX(180);
-	surface.LightsInit(XMFLOAT3(0, -2, 0), L"grass_seamless.dds", dev, defCon, &OotherM, false);// , true, false);
+	surface.LightsInit(XMFLOAT3(0, -3, 0), L"grass_seamless.dds", dev, defCon, &OotherM, false);// , true, false);
 	OotherM.world = XMMatrixIdentity() * XMMatrixRotationZ(180) * XMMatrixScaling(0.2f, 0.2f, 0.2f);
 	knight.LightsInit(XMFLOAT3(1, -2, 2), L"knight.dds", dev, defCon, &OotherM, true);
-	barrel.LightsInit(XMFLOAT3(0, -10, 20), L"barrel.dds", dev, defCon, &OotherM, true);
+	barrel.LightsInit(XMFLOAT3(0, -10, 20), L"barrel.dds", dev, defCon, &OotherM, false);
 	
 	////do not set to true
 	OotherM.world = XMMatrixIdentity();
+	OotherM.view = XMMatrixIdentity();
 	
 #pragma endregion
 
@@ -702,11 +703,6 @@ bool DEMO_APP::Run()
 			OotherM.view.r[3].m128_f32[2] = _z;
 
 
-			m_pitch -= differenceY;		// mouse y increases down, but pitch increases up
-			m_yaw -= differenceX;
-
-			m_pitch = (float)__max(-PI / 2.0f, m_pitch);
-			m_pitch = (float)__min(+PI / 2.0f, m_pitch);
 
 		}
 	}
@@ -739,18 +735,14 @@ bool DEMO_APP::Run()
 #pragma endregion
 
 #pragma region Viewport1
-	RunThread(&barrel, dev, defCon);
-	RunThread(&pyramid, dev, defCon);
-	RunThread(&Tree, dev, defCon);
-	RunThread(&knight, dev, defCon);
-	RunThread(&surface, dev, defCon);
 
-	/*ObjectModel* leftover;
+	//on the fly sort
+	ObjectModel* leftover;
 	leftover = RenderObjects(&barrel, &surface, dev, defCon, &OotherM);
+	leftover = RenderObjects(leftover, &Tree, dev, defCon, &OotherM);
 	leftover = RenderObjects(leftover, &pyramid, dev, defCon, &OotherM);
 	leftover = RenderObjects(leftover, &knight, dev, defCon, &OotherM);
-
-	leftover->LightsRun(dev, defCon);*/
+	leftover->LightsRun(dev, defCon);
 
 	light.SetParameters(defCon, nullptr, &OotherM);
  
@@ -834,6 +826,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, LPTSTR, int)
 
 	return 0;
 }
+
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	if (GetAsyncKeyState(VK_ESCAPE))
@@ -892,7 +885,7 @@ ObjectModel *RenderObjects(ObjectModel *first, ObjectModel *second, ID3D11Device
 
 	float obj2Dist = X*X + Y*Y + Z*Z;
 	
-	if (obj1Dist < obj2Dist)
+	if (obj1Dist > obj2Dist)
 	{
 		//Switch the order in which the cubes are drawn
 		first->LightsRun(dev, devCon);
@@ -905,9 +898,6 @@ ObjectModel *RenderObjects(ObjectModel *first, ObjectModel *second, ID3D11Device
 	}
 
 }
-
-
-
 
 
 //********************* END WARNING ************************//

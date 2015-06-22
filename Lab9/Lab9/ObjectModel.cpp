@@ -770,19 +770,9 @@ bool ObjectModel::LightsRun(
 	}
 	
 
-
-
-
 #pragma endregion
 	return true;
 }
-
-
-
-
-
-
-
 
 
 
