@@ -61,13 +61,7 @@ struct ObjectModel
 	vector<StrideStruct> m_stride;
 	
 	ProjViewMatricies  *ProjView;
-	
-	bool Init(XMFLOAT3 pos,
-		const wchar_t* path,
-		ID3D11Device * dev, 
-		ID3D11DeviceContext *devCon, 
-		ProjViewMatricies* _viewproj,
-		bool hasTextures, bool hasLights);
+
 
 	bool SkyInit(const wchar_t* path,
 		ID3D11Device * dev,
@@ -85,23 +79,23 @@ struct ObjectModel
 		ID3D11DeviceContext* devCon,
 		ID3D11DepthStencilView * pDSV);
 
-	
-	bool Run(
-		ID3D11Device* dev,
-		ID3D11DeviceContext* devCon);
-
-	bool RunNewPos(XMFLOAT3 pos,
-		ID3D11Device* dev,
-		ID3D11DeviceContext* devCon);
-	
 	bool LightsRun(
 		ID3D11Device* dev,
 		ID3D11DeviceContext* devCon);
 
+	bool FloorRun(
+		ID3D11Device* dev,
+		ID3D11DeviceContext* devCon);
+
+	bool FlootInit(
+		XMFLOAT3 pos,
+		const wchar_t* path,
+		ID3D11Device * dev,
+		ID3D11DeviceContext *devCon,
+		ProjViewMatricies* _viewproj);
 
 	bool loadOBJ(
 		const char * path
 		);
 
-	void Cleanup();
 };

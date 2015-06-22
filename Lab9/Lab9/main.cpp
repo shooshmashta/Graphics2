@@ -67,6 +67,7 @@ class DEMO_APP
 	ID3D11VertexShader *vertexShader;
 
 	ID3D11DepthStencilView* pDSV;
+	ID3D11DepthStencilView* TV_DSV;
 	D3D11_DEPTH_STENCIL_VIEW_DESC descDSV;
 	ID3D11Texture2D* pDepthStencil = NULL;
 
@@ -93,10 +94,19 @@ class DEMO_APP
 	ObjectModel barrel;
 	ObjectModel SkyBox;
 	ObjectModel Tree;
-	//ObjectModel renderedTexture;
 
+	//*******************************************************************************************
+	//*********************************Render To Texture Objects*********************************
+	//*******************************************************************************************
 
+	//ObjectModel TV;
+	ID3D11Texture2D* TV_TextureMap;
+	ID3D11RenderTargetView* TV_RTVMap;
+	ID3D11ShaderResourceView* TV_SRVMap;
 
+	//*******************************************************************************************
+	//*******************************************************************************************
+	//*******************************************************************************************
 	ProjViewMatricies OotherM;
 #pragma endregion
 
@@ -320,7 +330,7 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 	descDepth.Height = BACKBUFFER_HEIGHT;
 	descDepth.Usage = D3D11_USAGE_DEFAULT;
 	descDepth.Format = DXGI_FORMAT_R32_TYPELESS;
-	descDepth.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
+	descDepth.BindFlags = D3D11_BIND_DEPTH_STENCIL;// | D3D11_BIND_SHADER_RESOURCE;
 
 	tester = dev->CreateTexture2D(&descDepth, NULL, &pDepthStencil);
 	descDepth.SampleDesc.Count = 1;
@@ -406,6 +416,7 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 	threads[3] = thread(LoadModelOBJThread, "knight.obj", &knight);
 	threads[4] = thread(LoadModelOBJThread, "barrel.obj", &barrel);
 	threads[5] = thread(LoadModelOBJThread, "Tree.obj", &Tree);
+	//threads[6] = thread(LoadModelOBJThread, "Surface.obj", &TV);
 
 	for (int i = 0; i < MODELCOUNT; i++)
 	{
@@ -419,9 +430,7 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 	//barrel.loadOBJ("barrel.obj");
 
 
-
-
-
+	
 	
 
 
@@ -440,15 +449,66 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 	Tree.LightsInit(XMFLOAT3(0, -2, 10), L"Tree.dds", dev, defCon, &OotherM, true);// , true, false);
 
 	pyramid.LightsInit(XMFLOAT3(0, 0, 5), L"energy_seamless.dds", dev, defCon, &OotherM, true);// , true, false);
-	OotherM.world = OotherM.world* XMMatrixRotationX(180);
+	OotherM.world = XMMatrixIdentity() * XMMatrixRotationX(180);
 	surface.LightsInit(XMFLOAT3(0, -3, 0), L"grass_seamless.dds", dev, defCon, &OotherM, false);// , true, false);
-	OotherM.world = XMMatrixIdentity() * XMMatrixRotationZ(180) * XMMatrixScaling(0.2f, 0.2f, 0.2f);
+	//OotherM.world = XMMatrixIdentity() * XMMatrixRotationZ(180) * XMMatrixScaling(0.2f, 0.2f, 0.2f);
 	knight.LightsInit(XMFLOAT3(1, -2, 2), L"knight.dds", dev, defCon, &OotherM, true);
 	barrel.LightsInit(XMFLOAT3(0, -10, 20), L"barrel.dds", dev, defCon, &OotherM, false);
 	
-	////do not set to true
-	OotherM.world = XMMatrixIdentity();
-	OotherM.view = XMMatrixIdentity();
+
+
+	//*******************************************************************************************
+	//**********************************Setup Render To Texture**********************************
+	//*******************************************************************************************
+
+	D3D11_TEXTURE2D_DESC TV_Desc;
+	D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
+	D3D11_SHADER_RESOURCE_VIEW_DESC shaderResourceViewDesc;
+
+	ZeroMemory(&TV_Desc, sizeof(D3D11_TEXTURE2D_DESC));
+
+
+	TV_Desc.Width = BACKBUFFER_WIDTH;
+	TV_Desc.Height = BACKBUFFER_HEIGHT;
+	TV_Desc.MipLevels = 1;
+	TV_Desc.ArraySize = 1;
+	TV_Desc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+	TV_Desc.SampleDesc.Count = 2;
+	TV_Desc.SampleDesc.Quality = D3D11_STANDARD_MULTISAMPLE_PATTERN;
+	TV_Desc.Usage = D3D11_USAGE_DEFAULT;
+	TV_Desc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+	TV_Desc.CPUAccessFlags = 0;
+	TV_Desc.MiscFlags = 0;
+
+	dev->CreateTexture2D(&TV_Desc, NULL, &TV_TextureMap);
+
+	renderTargetViewDesc.Format = TV_Desc.Format;
+	renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2DMS;
+
+	dev->CreateRenderTargetView(TV_TextureMap, &renderTargetViewDesc, &TV_RTVMap);
+
+	shaderResourceViewDesc.Format = TV_Desc.Format;
+	shaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DMS;
+	
+
+	dev->CreateShaderResourceView(TV_TextureMap, &shaderResourceViewDesc, &TV_SRVMap);
+
+
+
+
+	//*******************************************************************************************
+	//*******************************************************************************************
+	//*******************************************************************************************
+
+
+
+
+
+
+
+	
+	//OotherM.world = XMMatrixIdentity();
+	//OotherM.view = XMMatrixIdentity();
 	
 #pragma endregion
 
@@ -458,8 +518,10 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 	light.LightsInit(dev, defCon, &OotherM);
 	light.SetParameters(defCon, nullptr, &OotherM);
 
-	
 
+	
+	surface.ObjTexture->Release();
+	surface.ObjTexture = TV_SRVMap;
 #pragma endregion
 
 
@@ -702,8 +764,6 @@ bool DEMO_APP::Run()
 			OotherM.view.r[3].m128_f32[1] = _y;
 			OotherM.view.r[3].m128_f32[2] = _z;
 
-
-
 		}
 	}
 #pragma endregion
@@ -714,15 +774,48 @@ bool DEMO_APP::Run()
 	devCon->OMSetBlendState(0, 0, 0xffffffff);
 	defCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
+	FLOAT f[4]{0, 0, 0, 0};
+	ObjectModel* leftover;
+		defCon->RSSetViewports(1, &viewport[0]);
+
+
+
+	//*******************************************************************************************
+	//*********************************Render To Texture Objects*********************************
+	//*******************************************************************************************
+	defCon->OMSetRenderTargets(1, &TV_RTVMap, pDSV);
+	defCon->ClearRenderTargetView(TV_RTVMap, f);
+	RunSkyThread(&SkyBox, dev, defCon, pDSV);
+	defCon->ClearRenderTargetView(TV_RTVMap, f);
+
+	//leftover = RenderObjects(&barrel, &surface, dev, defCon, &OotherM);
+
+	leftover = RenderObjects(&barrel, &Tree, dev, defCon, &OotherM);
+	leftover = RenderObjects(leftover, &pyramid, dev, defCon, &OotherM);
+	leftover = RenderObjects(leftover, &knight, dev, defCon, &OotherM);
+	leftover->LightsRun(dev, defCon);
+
+	//light.SetParameters(defCon, nullptr, &OotherM);
+
+	
+
+
+	//*******************************************************************************************
+	//*******************************************************************************************
+	//*******************************************************************************************
+
+
+
+
+
 
 #pragma region Buffer Clearing And Skybox
 
 	defCon->OMSetRenderTargets(1, &backBuffer, pDSV);
 
-	defCon->RSSetViewports(1, &viewport[0]);
 
 	//BGColor
-	FLOAT f[4]{0, 1, 0, 0};
+	
 	defCon->ClearRenderTargetView(backBuffer, f);
 
 
@@ -737,13 +830,12 @@ bool DEMO_APP::Run()
 #pragma region Viewport1
 
 	//on the fly sort
-	ObjectModel* leftover;
 	leftover = RenderObjects(&barrel, &surface, dev, defCon, &OotherM);
 	leftover = RenderObjects(leftover, &Tree, dev, defCon, &OotherM);
 	leftover = RenderObjects(leftover, &pyramid, dev, defCon, &OotherM);
 	leftover = RenderObjects(leftover, &knight, dev, defCon, &OotherM);
 	leftover->LightsRun(dev, defCon);
-
+	//surface.FloorRun(dev, devCon);
 	light.SetParameters(defCon, nullptr, &OotherM);
  
 #pragma endregion
@@ -756,10 +848,11 @@ bool DEMO_APP::Run()
 	XMMATRIX view = OotherM.view;
 	OotherM.view = XMMatrixTranslation(0, -2, 16);
 
-	RunThread( &barrel, dev, defCon);
-	RunThread( &surface, dev, defCon);
-	RunThread( &pyramid, dev, defCon);
-	RunThread( &knight, dev, defCon);
+	leftover = RenderObjects(&barrel, &surface, dev, defCon, &OotherM);
+	leftover = RenderObjects(leftover, &Tree, dev, defCon, &OotherM);
+	leftover = RenderObjects(leftover, &pyramid, dev, defCon, &OotherM);
+	leftover = RenderObjects(leftover, &knight, dev, defCon, &OotherM);
+	leftover->LightsRun(dev, defCon);
 
 	 OotherM.view = view;
 	light.SetParameters(defCon, nullptr, &OotherM);
@@ -784,7 +877,9 @@ bool DEMO_APP::ShutDown()
 
 	swap->SetFullscreenState(FALSE, NULL);    // switch to windowed mode
 
-	//light.Cleanup();
+	SAFE_RELEASE(TV_TextureMap);
+	SAFE_RELEASE(TV_RTVMap);
+	//SAFE_RELEASE(TV_SRVMap);
 	SAFE_RELEASE(defCon);
 	//SAFE_RELEASE(comList);
 	SAFE_RELEASE(devCon);

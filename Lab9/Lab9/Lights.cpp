@@ -5,6 +5,7 @@ Lights::~Lights()
 {
 	if (LightBuffer)
 	{
+	
 		SAFE_RELEASE(LightBuffer);
 	}
 }
