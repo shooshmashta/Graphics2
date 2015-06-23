@@ -848,9 +848,10 @@ bool DEMO_APP::Run()
 
 	//on the fly sort
 	leftover = RenderObjects(&barrel, &surface, dev, defCon, &OotherM);
-	leftover = RenderObjects(leftover, &Tree, dev, defCon, &OotherM);
+	leftover->LightsRun(dev, defCon);
+
+	leftover = RenderObjects(&knight, &Tree, dev, defCon, &OotherM);
 	leftover = RenderObjects(leftover, &pyramid, dev, defCon, &OotherM);
-	leftover = RenderObjects(leftover, &knight, dev, defCon, &OotherM);
 	leftover->LightsRun(dev, defCon);
 	//Star.Run(dev, devCon);
 	//surface.FloorRun(dev, devCon);
@@ -867,9 +868,10 @@ bool DEMO_APP::Run()
 	OotherM.view = XMMatrixTranslation(0, -2, 16);
 
 	leftover = RenderObjects(&barrel, &surface, dev, defCon, &OotherM);
-	leftover = RenderObjects(leftover, &Tree, dev, defCon, &OotherM);
+	leftover->LightsRun(dev, defCon);
+
+	leftover = RenderObjects(&knight, &Tree, dev, defCon, &OotherM);
 	leftover = RenderObjects(leftover, &pyramid, dev, defCon, &OotherM);
-	leftover = RenderObjects(leftover, &knight, dev, defCon, &OotherM);
 	leftover->LightsRun(dev, defCon);
 	//Star.Run(dev, devCon);
 

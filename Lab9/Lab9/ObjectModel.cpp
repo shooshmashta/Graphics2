@@ -535,7 +535,8 @@ bool ObjectModel::LightsRun(
 
 		devCon->OMSetBlendState(0, 0, 0xffffffff);
 	}
-
+	ID3D11ShaderResourceView * nullShader = nullptr;
+	devCon->PSSetShaderResources(0, 1, &nullShader);
 
 #pragma endregion
 
