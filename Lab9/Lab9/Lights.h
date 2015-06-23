@@ -95,8 +95,8 @@ struct Lights
 	lightStruct light;
 	AllofTheLights fourlights;
 	ID3D11Buffer * LightBuffer;
-
-
+	SpotLight On, off;
+	bool spot = true;
 	/*ID3D11VertexShader* m_vertexShader;
 	ID3D11PixelShader* m_pixelShader;
 	ID3D11InputLayout* m_layout;

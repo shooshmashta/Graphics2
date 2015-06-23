@@ -552,7 +552,7 @@ bool DEMO_APP::Run()
 {
 #pragma region Movement
 
-	if ((GetAsyncKeyState('O') & 0x1))
+	if ((GetAsyncKeyState('I') & 0x1))
 	{
 		if (wireOn)
 		{
@@ -566,9 +566,18 @@ bool DEMO_APP::Run()
 		}
 	}
 
-	if ((GetAsyncKeyState('I') & 0x1))
+	if ((GetAsyncKeyState('O') & 0x1))
 	{
-
+		if (light.spot)
+		{
+			light.spot = !light.spot;
+			light.fourlights.Spot = light.off;
+		}
+		else
+		{
+			light.spot = !light.spot;
+			light.fourlights.Spot = light.On;
+		}
 	}
 
 	if ((GetAsyncKeyState('U')))

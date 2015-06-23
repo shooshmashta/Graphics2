@@ -78,6 +78,15 @@ bool Lights::LightsInit(ID3D11Device * dev,
 	fourlights.Spot.ambient = XMFLOAT4(0.3f, 0.3f, 0.3f, 1.0f);
 	fourlights.Spot.SpotCone = 3;
 
+	On = fourlights.Spot;
+
+	off.position = XMFLOAT3(0.0f, 0.0f, 0.0f);
+	off.spotRange = 0.0f;
+	off.direction = XMFLOAT3(0, 0, 0.0f);
+	off.attentuation = XMFLOAT3(0.0f, 0.0f, 0.0f);
+	off.color = XMFLOAT4(0.0f, 0.0f, 0.0f, 0.0f);
+	off.ambient = XMFLOAT4(0.0f, 0.0f, 0.0f, 0.0f);
+	off.SpotCone = 0;
 
 	HRESULT tester;
 	D3D11_BUFFER_DESC lightBufDesc;
