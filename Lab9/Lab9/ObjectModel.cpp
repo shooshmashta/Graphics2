@@ -985,14 +985,14 @@ void ObjectModel::ComputeTangents()
 		///////////////**************new**************////////////////////
 
 		//Store the normal and tangent in our current vertex
-		//m_stride[i].v_normals.x = XMVectorGetX(normalSum);
-		//m_stride[i].v_normals.y = XMVectorGetY(normalSum);
-		//m_stride[i].v_normals.z = XMVectorGetZ(normalSum);
+		m_stride[i].v_normals.x = -XMVectorGetX(normalSum);
+		m_stride[i].v_normals.y = -XMVectorGetY(normalSum);
+		m_stride[i].v_normals.z = -XMVectorGetZ(normalSum);
 
 		///////////////**************new**************////////////////////
-		m_stride[i].v_tangents.x = XMVectorGetX(tangentSum);
-		m_stride[i].v_tangents.y = XMVectorGetY(tangentSum);
-		m_stride[i].v_tangents.z = XMVectorGetZ(tangentSum);
+		m_stride[i].v_tangents.x = -XMVectorGetX(tangentSum);
+		m_stride[i].v_tangents.y = -XMVectorGetY(tangentSum);
+		m_stride[i].v_tangents.z = -XMVectorGetZ(tangentSum);
 		///////////////**************new**************////////////////////
 
 		//Clear normalSum, tangentSum and facesUsing for next vertex
