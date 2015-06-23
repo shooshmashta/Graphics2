@@ -4,8 +4,13 @@ ObjectModel::~ObjectModel()
 {
 	if (hasTexture)
 	{
-		SAFE_RELEASE(textureResource);
-		SAFE_RELEASE(ObjTexture);
+		SAFE_RELEASE(textureResource[0]);
+		SAFE_RELEASE(ObjTexture[0]);
+		if (!isSky)
+		{
+			SAFE_RELEASE(textureResource[1]);
+			SAFE_RELEASE(ObjTexture[1]);
+		}
 		SAFE_RELEASE(ObjTextureSamplerState);
 	}
 
@@ -142,6 +147,7 @@ bool ObjectModel::SkyInit(const wchar_t* path,
 	ID3D11DeviceContext *devCon,
 	ProjViewMatricies* _viewproj)
 {
+	
 	ProjView = _viewproj;
 
 	ProjView->world.r[3].m128_f32[0] = ProjView->view.r[3].m128_f32[0];
@@ -150,7 +156,7 @@ bool ObjectModel::SkyInit(const wchar_t* path,
 
 	hasTexture = true;
 	hasLight = true;
-
+	isSky = true;
 	HRESULT tester = 0;
 
 	D3D11_BUFFER_DESC assigner;
@@ -182,7 +188,7 @@ bool ObjectModel::SkyInit(const wchar_t* path,
 	tester = dev->CreateInputLayout(vLayout, 2, Sky_VS,
 		sizeof(Sky_VS), &layout);
 
-	tester = CreateDDSTextureFromFile(dev, path, &textureResource, &ObjTexture);
+	tester = CreateDDSTextureFromFile(dev, path, &textureResource[0], &ObjTexture[0]);
 
 	if (tester)
 	{
@@ -260,7 +266,7 @@ bool ObjectModel::SkyRun(
 	ProjView->view = XMMatrixInverse(nullptr, ProjView->view);
 
 	devCon->VSSetConstantBuffers(0, 1, &matrixLocationBuffer[1]);
-	devCon->PSSetShaderResources(0, 1, &ObjTexture);
+	devCon->PSSetShaderResources(0, 1, &ObjTexture[0]);
 	devCon->IASetVertexBuffers(0, 1, &VertBuff, &strides, &offsets);
 	devCon->IASetIndexBuffer(IndexBuff, DXGI_FORMAT_R32_UINT, offsets);
 
@@ -277,10 +283,12 @@ bool ObjectModel::SkyRun(
 bool ObjectModel::LightsInit(
 	XMFLOAT3 pos,
 	const wchar_t* path,
+	const wchar_t* norm,
 	ID3D11Device * dev,
 	ID3D11DeviceContext *devCon,
 	ProjViewMatricies* _viewproj, bool _hasTrans)
 {
+	ComputeTangents();
 	hasTrans = _hasTrans;
 	ProjView = _viewproj;
 	HRESULT tester = 0;
@@ -336,13 +344,13 @@ bool ObjectModel::LightsInit(
 
 		{ "TANG", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0,
 		D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 }, 
-
+		/*
 		{ "BINORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0,
-		D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },*/
 	};
 
 
-	tester = dev->CreateInputLayout(vLayout, 5, Combined_VS,
+	tester = dev->CreateInputLayout(vLayout, 4, Combined_VS,
 		sizeof(Combined_VS), &layout);
 
 
@@ -352,12 +360,9 @@ bool ObjectModel::LightsInit(
 #pragma region ObjTextures
 
 
-	tester = CreateDDSTextureFromFile(dev, path, &textureResource, &ObjTexture);
-
-	if (tester)
-	{
-		tester;
-	}
+	tester = CreateDDSTextureFromFile(dev, path, &textureResource[0], &ObjTexture[0]);
+	tester = CreateDDSTextureFromFile(dev, norm, &textureResource[1], &ObjTexture[1]);
+	
 
 	D3D11_SAMPLER_DESC sampleDec;
 	sampleDec.Filter = D3D11_FILTER_ANISOTROPIC;
@@ -494,7 +499,7 @@ bool ObjectModel::LightsRun(
 	strides = sizeof(StrideStruct);
 	offsets = 0;
 
-	devCon->PSSetShaderResources(0, 1, &ObjTexture);
+	devCon->PSSetShaderResources(0, 2, ObjTexture);
 	devCon->IASetVertexBuffers(0, 1, &VertBuff, &strides, &offsets);
 	devCon->IASetIndexBuffer(IndexBuff, DXGI_FORMAT_R32_UINT, offsets);
 
@@ -517,7 +522,7 @@ bool ObjectModel::LightsRun(
 
 		devCon->DrawIndexed(vertexIndices.size(), 0, 0);
 
-		devCon->PSSetShaderResources(0, 1, &ObjTexture);
+		devCon->PSSetShaderResources(0, 2, ObjTexture);
 		devCon->IASetVertexBuffers(0, 1, &VertBuff, &strides, &offsets);
 		devCon->IASetIndexBuffer(IndexBuff, DXGI_FORMAT_R32_UINT, offsets);
 
@@ -698,7 +703,7 @@ bool ObjectModel::FloorRun(
 	devCon->IASetVertexBuffers(0, 1, &VertBuff, &strides, &offsets);
 	devCon->IASetIndexBuffer(IndexBuff, DXGI_FORMAT_R32_UINT, offsets);
 
-	devCon->PSSetShaderResources(0, 1, &ObjTexture);
+	devCon->PSSetShaderResources(0, 1, &ObjTexture[0]);
 	devCon->VSSetShader(vertexShader, 0, 0);
 	devCon->PSSetShader(pixelShader, 0, 0);
 

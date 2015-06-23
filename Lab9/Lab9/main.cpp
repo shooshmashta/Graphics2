@@ -453,7 +453,7 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 	//Star.Init(XMFLOAT3(-1, 0, 1), dev, devCon, &OotherM);
 
 
-	pyramid.ComputeTangents();
+	
 	vector<unsigned int> skyIndex;
 	int l = SkyBox.vertexIndices.size() - 1;
 	for (size_t i = 0; i < SkyBox.vertexIndices.size(); i++)
@@ -464,14 +464,14 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 
 	SkyBox.vertexIndices = skyIndex;
 	SkyBox.SkyInit(L"skyb.dds", dev, defCon, &OotherM);
-	Tree.LightsInit(XMFLOAT3(1, -2, 10), L"Tree.dds", dev, defCon, &OotherM, true);// , true, false);
+	Tree.LightsInit(XMFLOAT3(1, -2, 10), L"Tree.dds", L"tree_normal.dds", dev, defCon, &OotherM, true);// , true, false);
 
-	pyramid.LightsInit(XMFLOAT3(1, 0, 5), L"Floor_Diffuse.dds", dev, defCon, &OotherM, true);// , true, false);
+	pyramid.LightsInit(XMFLOAT3(1, 0, 5), L"energy_seamless.dds", L"energy_seamless_normal.dds", dev, defCon, &OotherM, true);// , true, false);
 	OotherM.world = XMMatrixIdentity() * XMMatrixRotationX(180);
-	surface.LightsInit(XMFLOAT3(0, -3, 0), L"grass_seamless.dds", dev, defCon, &OotherM, false);// , true, false);
+	surface.LightsInit(XMFLOAT3(0, -3, 0), L"grass_seamless.dds", L"grass_seamless_normal.dds", dev, defCon, &OotherM, false);// , true, false);
 	//OotherM.world = XMMatrixIdentity() * XMMatrixRotationZ(180) * XMMatrixScaling(0.2f, 0.2f, 0.2f);
-	knight.LightsInit(XMFLOAT3(1, -2, 2), L"knight.dds", dev, defCon, &OotherM, true);
-	barrel.LightsInit(XMFLOAT3(0, -10, 20), L"barrel.dds", dev, defCon, &OotherM, false);
+	knight.LightsInit(XMFLOAT3(1, -2, 2), L"knight.dds", L"Knight_normal.dds", dev, defCon, &OotherM, true);
+	barrel.LightsInit(XMFLOAT3(0, -10, 20), L"barrel.dds", L"barrel_normal.dds", dev, defCon, &OotherM, false);
 
 
 
@@ -538,8 +538,8 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 
 
 
-	surface.ObjTexture->Release();
-	surface.ObjTexture = TV_SRVMap;
+	surface.ObjTexture[0]->Release();
+	surface.ObjTexture[0] = TV_SRVMap;
 #pragma endregion
 
 

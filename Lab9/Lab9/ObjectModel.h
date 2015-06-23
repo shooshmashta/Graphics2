@@ -8,7 +8,7 @@ struct StrideStruct
 	XMFLOAT2 v_uvs = XMFLOAT2(0.0f, 0.0f);
 	XMFLOAT3 v_normals = XMFLOAT3(0.0f, 0.0f, 0.0f);
 	XMFLOAT4 v_tangents = XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f);
-	XMFLOAT3 v_binormals = XMFLOAT3(0.0f, 0.0f, 0.0f);
+	//XMFLOAT3 v_binormals = XMFLOAT3(0.0f, 0.0f, 0.0f);
 };
 
 struct Simple_Vert
@@ -31,6 +31,7 @@ struct ObjectModel
 	XMMATRIX world = XMMatrixIdentity();
 	bool hasTexture = false;
 	bool hasLight = false;
+	bool isSky = false;
 	ID3D11Buffer* VertBuff;             // Models vertex buffer
 	ID3D11Buffer* IndexBuff;            // Models index buffer
 	ID3D11Buffer* matrixLocationBuffer[2];
@@ -38,14 +39,13 @@ struct ObjectModel
 	ID3D11InputLayout *layout;
 	ID3D11PixelShader *pixelShader;
 	ID3D11VertexShader *vertexShader;
-
 	//all light stuff
 	//Lights light;
 
 	//all texture stuff
-	ID3D11ShaderResourceView * ObjTexture;
+	ID3D11ShaderResourceView * ObjTexture[2];
 	ID3D11SamplerState* ObjTextureSamplerState;
-	ID3D11Resource * textureResource;
+	ID3D11Resource * textureResource[2];
 
 	//blending
 	
@@ -72,6 +72,7 @@ struct ObjectModel
 
 	bool LightsInit(XMFLOAT3 pos, 
 		const wchar_t* path,
+		const wchar_t* norm,
 		ID3D11Device * dev,
 		ID3D11DeviceContext *devCon,
 		ProjViewMatricies* _viewproj, bool trans);

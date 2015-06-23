@@ -15,7 +15,7 @@ struct V_IN
 	float2 tex : UVS;
 	float3 normal : NORMS;
 	float4 tangent : TANG;
-	float3 binormal : BINORMAL;
+	//float3 binormal : BINORMAL;
 
 
 };
@@ -28,7 +28,7 @@ struct GS_OUT
 	float4 worldPosition: WORLD;
 	float4 View : VIEW;
 	float4 tangent : TANGENTS;
-	float3 binormal : BINORMAL;
+	//float3 binormal : BINORMAL;
 };
 
 GS_OUT  main(V_IN input)
@@ -50,7 +50,7 @@ GS_OUT  main(V_IN input)
 	
 	output.normal = mul(input.normal, (float3x3) world);
 	output.tangent = mul(input.tangent, world);
-	output.binormal = mul(input.binormal, (float3x3)world);
+	//output.binormal = mul(input.binormal, (float3x3)world);
 	
 	return output;
 }

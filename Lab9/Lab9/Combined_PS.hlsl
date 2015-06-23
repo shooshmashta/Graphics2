@@ -62,7 +62,7 @@ struct PS_IN
 	float4 worldPosition: WORLD;
 	float4 View : VIEW;
 	float4 tangent : TANGENTS;
-	float3 binormal : BINORMAL;
+	//float3 binormal : BINORMAL;
 //	float  lightSwitch : LIGHT; 
 	//float4 worldPos : WORLD;
 };
@@ -80,9 +80,6 @@ float4 main(PS_IN input) : SV_TARGET
 	}
 	
 	float3 normal = normalize(input.normal);
-	float3 binormal = normalize(input.binormal);
-	float4 tangent = normalize(input.tangent);
-	
 	float ViewDir = normalize(input.View - input.worldPosition);
 	float3 location = normalize((-dLight.DirectDirection) + ViewDir);
 	float  intensity = max(pow(saturate(dot(normal, location)), 25.0f), 0);
@@ -91,37 +88,24 @@ float4 main(PS_IN input) : SV_TARGET
 
 
 	//normal mapping
-	//float bumpMap = baseTexture[1].Sample(filters, input.tex);
-	//bumpMap = (bumpMap * 2.0f) - 1.0f;
-	//
-	//float  bumpNormal = (bumpMap.x * input.tangent) + (bumpMap.y * input.binormal) + (bumpMap.z * input.normal);
+	float4 normalMap = baseTexture[1].Sample(filters, input.tex);
 
-	//bumpNormal = normalize(bumpNormal);
+	normalMap = (2.0f*normalMap) - 1.0f;
 
+	float3 tangent = normalize(input.tangent - dot(input.tangent, input.normal)*input.normal).xyz;
 
+	float3 binormal = cross(input.normal, tangent);
+	 
+	float3x3 texSpace = float3x3(tangent, binormal, input.normal);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+	normal = normalize(mul(normalMap, texSpace));
 
 
 
 //	Directional Light
 	float4 DirectionalResult = saturate(dot(location, normal) * texColor) + (dLight.DirectAmbient * texColor) + intensity;
-		//float4 DirectionalResult = float4(0, 0, 0, 0);
 
-
-			location = normalize((-pLight.PointDirection) + ViewDir);
+	location = normalize((-pLight.PointDirection) + ViewDir);
 	intensity = max(pow(saturate(dot(normal, location)), 25.0f), 0);
 	////PointLight
 	float3 PointPixToLight = (pLight.PointPosition.xyz - input.worldPosition.xyz);
@@ -157,7 +141,7 @@ float4 main(PS_IN input) : SV_TARGET
 	float4 SpotAmbient = sLight.SpotAmbient * texColor;
 		float4 SpotResult = float4(0, 0, 0, 0);
 
-		/*if (SpotD > sLight.SpotRange)
+		if (SpotD > sLight.SpotRange)
 		{
 		SpotResult = SpotAmbient;
 		}
@@ -177,7 +161,7 @@ float4 main(PS_IN input) : SV_TARGET
 		}
 
 		SpotResult = saturate(SpotResult + SpotAmbient) + intensity;
-		}*/
+		}
 
 		float4 allColors = (DirectionalResult + PointResult + SpotResult);
 		
