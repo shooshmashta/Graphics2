@@ -61,28 +61,60 @@ struct PS_IN
 	float3 normal : NORMAL;
 	float4 worldPosition: WORLD;
 	float4 View : VIEW;
+	float4 tangent : TANGENTS;
+	float3 binormal : BINORMAL;
 //	float  lightSwitch : LIGHT; 
 	//float4 worldPos : WORLD;
 };
 
-
-Texture2D baseTexture : register(t0);
+Texture2D baseTexture[2] : register(t0);
+//Texture2D baseTexture : register(t0);
 SamplerState filters : register(s0);
 
 float4 main(PS_IN input) : SV_TARGET
 {
+	float4 texColor = baseTexture[0].Sample(filters, input.tex);
+	if (texColor.a < 0.25f)
+	{
+		discard;
+	}
+	
 	float3 normal = normalize(input.normal);
-	float4 texColor = baseTexture.Sample(filters, input.tex);
+	float3 binormal = normalize(input.binormal);
+	float4 tangent = normalize(input.tangent);
+	
 	float ViewDir = normalize(input.View - input.worldPosition);
 	float3 location = normalize((-dLight.DirectDirection) + ViewDir);
 	float  intensity = max(pow(saturate(dot(normal, location)), 25.0f), 0);
 
 	//clip(texColor.a - 0.25f);
 
-	if (texColor.a < 0.25f)
-	{
-		discard;
-	}
+
+	//normal mapping
+	//float bumpMap = baseTexture[1].Sample(filters, input.tex);
+	//bumpMap = (bumpMap * 2.0f) - 1.0f;
+	//
+	//float  bumpNormal = (bumpMap.x * input.tangent) + (bumpMap.y * input.binormal) + (bumpMap.z * input.normal);
+
+	//bumpNormal = normalize(bumpNormal);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 //	Directional Light
 	float4 DirectionalResult = saturate(dot(location, normal) * texColor) + (dLight.DirectAmbient * texColor) + intensity;

@@ -7,6 +7,8 @@ struct StrideStruct
 	XMFLOAT4 m_vect = XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f);
 	XMFLOAT2 v_uvs = XMFLOAT2(0.0f, 0.0f);
 	XMFLOAT3 v_normals = XMFLOAT3(0.0f, 0.0f, 0.0f);
+	XMFLOAT4 v_tangents = XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f);
+	XMFLOAT3 v_binormals = XMFLOAT3(0.0f, 0.0f, 0.0f);
 };
 
 struct Simple_Vert
@@ -94,8 +96,19 @@ struct ObjectModel
 		ID3D11DeviceContext *devCon,
 		ProjViewMatricies* _viewproj);
 
+	bool ObjectModel::Init(XMFLOAT3 pos,
+		ID3D11Device* dev,
+		ID3D11DeviceContext* devCon,
+		ProjViewMatricies* _viewproj);
+
+	bool ObjectModel::Run(
+		ID3D11Device* dev,
+		ID3D11DeviceContext* devCon);
+
 	bool loadOBJ(
 		const char * path
 		);
+
+	void ComputeTangents();
 
 };

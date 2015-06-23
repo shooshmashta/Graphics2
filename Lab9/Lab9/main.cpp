@@ -48,14 +48,14 @@ class DEMO_APP
 	ID3D11RasterizerState * rasterStateSolid;
 	ID3D11RasterizerState * rasterStateWire;
 
-	Simple_Vert star[12];
+	//Simple_Vert star[12];
 
-	XMMATRIX star1World = XMMatrixIdentity();
+	//XMMATRIX star1World = XMMatrixIdentity();
 
 	bool wireOn = false;
 
 
-	TriIndexBuffer starIndex[20];
+	//TriIndexBuffer starIndex[20];
 
 	//movement
 	LONG lastmouseY = 0;
@@ -94,7 +94,7 @@ class DEMO_APP
 	ObjectModel barrel;
 	ObjectModel SkyBox;
 	ObjectModel Tree;
-
+	//ObjectModel Star;
 	//*******************************************************************************************
 	//*********************************Render To Texture Objects*********************************
 	//*******************************************************************************************
@@ -134,7 +134,7 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 {
 	XMMATRIX _m = XMMatrixIdentity();
 	_m = XMMatrixTranslation(0, 0, 4);
-	star1World = _m + star1World;
+	//star1World = _m + star1World;
 
 	ProjPerspectiveMatrixInit();
 	XMVECTOR mattemp;
@@ -173,53 +173,53 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 
 	bool everyother = true;
 
-	for (int i = 0; i < 10; i++)
-	{
+	//for (int i = 0; i < 10; i++)
+	//{
 
-		if (everyother)
-		{
-			everyother = false;
-			star[i].m_vect.x = cosf(ToRad(36.0f * (float)(i)));
-			star[i].m_vect.y = sinf(ToRad(36.0f * (float)(i)));
-		}
-		else
-		{
-			star[i].m_vect.x = cosf(ToRad(36.0f * (float)i)) / 2;
-			star[i].m_vect.y = sinf(ToRad(36.0f * (float)i)) / 2;
-			everyother = true;
-		}
+	//	if (everyother)
+	//	{
+	//		everyother = false;
+	//		star[i].m_vect.x = cosf(ToRad(36.0f * (float)(i)));
+	//		star[i].m_vect.y = sinf(ToRad(36.0f * (float)(i)));
+	//	}
+	//	else
+	//	{
+	//		star[i].m_vect.x = cosf(ToRad(36.0f * (float)i)) / 2;
+	//		star[i].m_vect.y = sinf(ToRad(36.0f * (float)i)) / 2;
+	//		everyother = true;
+	//	}
 
-		star[i].m_color.x = 0.5f;
-		star[i].m_color.y = 0.25f;
+	//	star[i].m_color.x = 0.5f;
+	//	star[i].m_color.y = 0.25f;
 
-	}
+	//}
 
-	star[10].m_vect.z = 0.3f;
-	star[11].m_vect.z = -0.3f;
+	//star[10].m_vect.z = 0.3f;
+	//star[11].m_vect.z = -0.3f;
 
-	star[10].m_color.x = 1;
-	star[10].m_color.y = 1;
-	star[11].m_color.x = 1;
-	star[11].m_color.y = 1;
+	//star[10].m_color.x = 1;
+	//star[10].m_color.y = 1;
+	//star[11].m_color.x = 1;
+	//star[11].m_color.y = 1;
 
 
-	for (int i = 0; i < 10; i++)
-	{
-		starIndex[i].i1 = i;
-		starIndex[i].i2 = i + 1;
+	//for (int i = 0; i < 10; i++)
+	//{
+	//	starIndex[i].i1 = i;
+	//	starIndex[i].i2 = i + 1;
 
-		starIndex[i + 10].i1 = i + 1;
-		starIndex[i + 10].i2 = i;
-		starIndex[i + 10].i0 = 11;
+	//	starIndex[i + 10].i1 = i + 1;
+	//	starIndex[i + 10].i2 = i;
+	//	starIndex[i + 10].i0 = 11;
 
-		if (i > 8)
-		{
-			starIndex[i].i2 = 0;
+	//	if (i > 8)
+	//	{
+	//		starIndex[i].i2 = 0;
 
-			starIndex[i + 10].i1 = 0;
-			starIndex[i + 10].i2 = i;
-		}
-	}
+	//		starIndex[i + 10].i1 = 0;
+	//		starIndex[i + 10].i2 = i;
+	//	}
+	//}
 
 
 	// ****************** BEGIN WARNING ***********************// 
@@ -429,13 +429,31 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 	//knight.loadOBJ("knight.obj");
 	//barrel.loadOBJ("barrel.obj");
 
+	//The star
+	//
+	//Simple_Vert _v;
+	//StrideStruct _s;
+
+	//for (size_t i = 0; i < 12; i++)
+	//{
+	//_v = star[i];
+	//
+	//_s.m_vect = star[i].m_vect;
+	//
+	//Star.v_vertices.push_back(_v);
+	//Star.m_stride.push_back(_s);
+	//}
+	//for (size_t i = 0; i < 20; i++)
+	//{
+	//	Star.vertexIndices.push_back(starIndex[i].i0);
+	//	Star.vertexIndices.push_back(starIndex[i].i1);
+	//	Star.vertexIndices.push_back(starIndex[i].i2);
+	//}
+
+	//Star.Init(XMFLOAT3(-1, 0, 1), dev, devCon, &OotherM);
 
 
-
-
-
-
-
+	pyramid.ComputeTangents();
 	vector<unsigned int> skyIndex;
 	int l = SkyBox.vertexIndices.size() - 1;
 	for (size_t i = 0; i < SkyBox.vertexIndices.size(); i++)
@@ -446,9 +464,9 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 
 	SkyBox.vertexIndices = skyIndex;
 	SkyBox.SkyInit(L"skyb.dds", dev, defCon, &OotherM);
-	Tree.LightsInit(XMFLOAT3(0, -2, 10), L"Tree.dds", dev, defCon, &OotherM, true);// , true, false);
+	Tree.LightsInit(XMFLOAT3(1, -2, 10), L"Tree.dds", dev, defCon, &OotherM, true);// , true, false);
 
-	pyramid.LightsInit(XMFLOAT3(0, 0, 5), L"Floor_Diffuse.dds", dev, defCon, &OotherM, true);// , true, false);
+	pyramid.LightsInit(XMFLOAT3(1, 0, 5), L"Floor_Diffuse.dds", dev, defCon, &OotherM, true);// , true, false);
 	OotherM.world = XMMatrixIdentity() * XMMatrixRotationX(180);
 	surface.LightsInit(XMFLOAT3(0, -3, 0), L"grass_seamless.dds", dev, defCon, &OotherM, false);// , true, false);
 	//OotherM.world = XMMatrixIdentity() * XMMatrixRotationZ(180) * XMMatrixScaling(0.2f, 0.2f, 0.2f);
@@ -792,7 +810,7 @@ bool DEMO_APP::Run()
 	leftover = RenderObjects(leftover, &pyramid, dev, defCon, &OotherM);
 	leftover = RenderObjects(leftover, &knight, dev, defCon, &OotherM);
 	leftover->LightsRun(dev, defCon);
-
+	//Star.Run(dev, devCon);
 	light.SetParameters(defCon, nullptr, &OotherM);
 
 	//*******************************************************************************************
@@ -825,6 +843,7 @@ bool DEMO_APP::Run()
 	leftover = RenderObjects(leftover, &pyramid, dev, defCon, &OotherM);
 	leftover = RenderObjects(leftover, &knight, dev, defCon, &OotherM);
 	leftover->LightsRun(dev, defCon);
+	//Star.Run(dev, devCon);
 	//surface.FloorRun(dev, devCon);
 	light.SetParameters(defCon, nullptr, &OotherM);
 
@@ -843,6 +862,7 @@ bool DEMO_APP::Run()
 	leftover = RenderObjects(leftover, &pyramid, dev, defCon, &OotherM);
 	leftover = RenderObjects(leftover, &knight, dev, defCon, &OotherM);
 	leftover->LightsRun(dev, defCon);
+	//Star.Run(dev, devCon);
 
 	OotherM.view = view;
 	light.SetParameters(defCon, nullptr, &OotherM);

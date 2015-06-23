@@ -32,7 +32,7 @@ V_OUT main(V_IN input)
 	float4 localH = float4(input.posL.xyz, 1);
 	
 	// move local space vertex from vertex buffer into world space.
-	localH = mul(localH, worldMatrix);
+	localH = mul(localH, worldMatrix1);
 	
 	// TODO: Move into view space, then projection space
 	localH = mul(localH, viewMatrix);
