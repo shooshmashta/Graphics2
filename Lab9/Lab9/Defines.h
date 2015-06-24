@@ -41,8 +41,8 @@ using namespace DirectX;
 #define PI 3.14159265f
 
 
-#define BACKBUFFER_WIDTH	800
-#define BACKBUFFER_HEIGHT	800
+#define BACKBUFFER_WIDTH	1440 
+#define BACKBUFFER_HEIGHT	900
 
 #define zNear 0.1f
 #define zFar 100.0f
@@ -58,8 +58,8 @@ using namespace DirectX;
 #define BLACK 0x0
 
 #define GRIDSIZE 160
-#define SAFE_RELEASE(p) {if(p){p->Release(); p=nullptr;}}
 
+#define SAFE_RELEASE(p) {if(p){p->Release(); p=nullptr;}}
 #define ToDegree(rad) ((rad) * (180.0f / PI))
 #define ToRad(deg) ((deg) * ( PI / 180.0f))
 

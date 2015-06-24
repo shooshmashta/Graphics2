@@ -17,7 +17,7 @@ void LoadModelOBJThread(const char* path, ObjectModel * model);
 void RunThread(ObjectModel * model, ID3D11Device * dev, ID3D11DeviceContext * defCon);
 void RunSkyThread(ObjectModel * model, ID3D11Device * dev, ID3D11DeviceContext * defCon, ID3D11DepthStencilView * pDSV);
 ObjectModel *RenderObjects(ObjectModel *first, ObjectModel *second, ID3D11Device *dev, ID3D11DeviceContext *devCon, ProjViewMatricies *viewProj);
-
+IDXGISwapChain	*swapGlobal;
 //************************************************************
 //************ SIMPLE WINDOWS APP CLASS **********************
 //************************************************************
@@ -39,7 +39,7 @@ class DEMO_APP
 	thread* threads;
 	thread* RunThreads;
 
-
+	bool fullscreen = false;
 	mutex mutex;
 	condition_variable condVar;
 
@@ -173,55 +173,7 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 
 	bool everyother = true;
 
-	//for (int i = 0; i < 10; i++)
-	//{
-
-	//	if (everyother)
-	//	{
-	//		everyother = false;
-	//		star[i].m_vect.x = cosf(ToRad(36.0f * (float)(i)));
-	//		star[i].m_vect.y = sinf(ToRad(36.0f * (float)(i)));
-	//	}
-	//	else
-	//	{
-	//		star[i].m_vect.x = cosf(ToRad(36.0f * (float)i)) / 2;
-	//		star[i].m_vect.y = sinf(ToRad(36.0f * (float)i)) / 2;
-	//		everyother = true;
-	//	}
-
-	//	star[i].m_color.x = 0.5f;
-	//	star[i].m_color.y = 0.25f;
-
-	//}
-
-	//star[10].m_vect.z = 0.3f;
-	//star[11].m_vect.z = -0.3f;
-
-	//star[10].m_color.x = 1;
-	//star[10].m_color.y = 1;
-	//star[11].m_color.x = 1;
-	//star[11].m_color.y = 1;
-
-
-	//for (int i = 0; i < 10; i++)
-	//{
-	//	starIndex[i].i1 = i;
-	//	starIndex[i].i2 = i + 1;
-
-	//	starIndex[i + 10].i1 = i + 1;
-	//	starIndex[i + 10].i2 = i;
-	//	starIndex[i + 10].i0 = 11;
-
-	//	if (i > 8)
-	//	{
-	//		starIndex[i].i2 = 0;
-
-	//		starIndex[i + 10].i1 = 0;
-	//		starIndex[i + 10].i2 = i;
-	//	}
-	//}
-
-
+	
 	// ****************** BEGIN WARNING ***********************// 
 	// WINDOWS CODE, I DON'T TEACH THIS YOU MUST KNOW IT ALREADY! 
 	application = hinst;
@@ -280,7 +232,7 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 	dev->CreateDeferredContext(0, &defCon);
 
 
-
+	swapGlobal = swap;
 
 	////get the address of the back buffer
 	ID3D11Texture2D *_BackBuffer = nullptr;
@@ -316,9 +268,6 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 	defCon->RSSetViewports(2, viewport);
 
 
-
-
-
 	D3D11_TEXTURE2D_DESC descDepth;
 	descDepth.MipLevels = 1;
 	descDepth.ArraySize = 1;
@@ -333,7 +282,7 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 	descDepth.BindFlags = D3D11_BIND_DEPTH_STENCIL;// | D3D11_BIND_SHADER_RESOURCE;
 
 	tester = dev->CreateTexture2D(&descDepth, NULL, &pDepthStencil);
-	descDepth.SampleDesc.Count = 1;
+
 
 
 	D3D11_DEPTH_STENCIL_DESC dsDesc;
@@ -399,10 +348,6 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 	defCon->RSSetState(rasterStateSolid);
 	pDSState->Release();
 
-
-
-
-
 #pragma region Objects
 
 	threads = new thread[MODELCOUNT];
@@ -429,31 +374,6 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 	//knight.loadOBJ("knight.obj");
 	//barrel.loadOBJ("barrel.obj");
 
-	//The star
-	//
-	//Simple_Vert _v;
-	//StrideStruct _s;
-
-	//for (size_t i = 0; i < 12; i++)
-	//{
-	//_v = star[i];
-	//
-	//_s.m_vect = star[i].m_vect;
-	//
-	//Star.v_vertices.push_back(_v);
-	//Star.m_stride.push_back(_s);
-	//}
-	//for (size_t i = 0; i < 20; i++)
-	//{
-	//	Star.vertexIndices.push_back(starIndex[i].i0);
-	//	Star.vertexIndices.push_back(starIndex[i].i1);
-	//	Star.vertexIndices.push_back(starIndex[i].i2);
-	//}
-
-	//Star.Init(XMFLOAT3(-1, 0, 1), dev, devCon, &OotherM);
-
-
-	
 	vector<unsigned int> skyIndex;
 	int l = SkyBox.vertexIndices.size() - 1;
 	for (size_t i = 0; i < SkyBox.vertexIndices.size(); i++)
@@ -461,19 +381,13 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 		skyIndex.push_back(SkyBox.vertexIndices[l]);
 		l--;
 	}
-
 	SkyBox.vertexIndices = skyIndex;
 	SkyBox.SkyInit(L"skyb.dds", dev, defCon, &OotherM);
-	Tree.LightsInit(XMFLOAT3(1, -2, 10), L"Tree.dds", L"tree_normal.dds", dev, defCon, &OotherM, true);// , true, false);
-
-	pyramid.LightsInit(XMFLOAT3(1, 0, 5), L"energy_seamless.dds", L"energy_seamless_normal.dds", dev, defCon, &OotherM, true);// , true, false);
-	OotherM.world = XMMatrixIdentity() * XMMatrixRotationX(180);
-	surface.LightsInit(XMFLOAT3(0, -3, 0), L"grass_seamless.dds", L"grass_seamless_normal.dds", dev, defCon, &OotherM, false);// , true, false);
-	//OotherM.world = XMMatrixIdentity() * XMMatrixRotationZ(180) * XMMatrixScaling(0.2f, 0.2f, 0.2f);
+	Tree.LightsInit(XMFLOAT3(1, -2, 10), L"Tree.dds", L"tree_normal.dds", dev, defCon, &OotherM, true);
+	pyramid.LightsInit(XMFLOAT3(1, 0, 5), L"energy_seamless.dds", L"energy_seamless_normal.dds", dev, defCon, &OotherM, true);
+	surface.LightsInit(XMFLOAT3(0, -3, 4), L"grass_seamless.dds", L"grass_seamless_normal.dds", dev, defCon, &OotherM, false);
 	knight.LightsInit(XMFLOAT3(1, -2, 2), L"knight.dds", L"Knight_normal.dds", dev, defCon, &OotherM, true);
 	barrel.LightsInit(XMFLOAT3(0, -10, 20), L"barrel.dds", L"barrel_normal.dds", dev, defCon, &OotherM, false);
-
-
 
 	//*******************************************************************************************
 	//**********************************Setup Render To Texture**********************************
@@ -484,7 +398,6 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 	D3D11_SHADER_RESOURCE_VIEW_DESC shaderResourceViewDesc;
 
 	ZeroMemory(&TV_Desc, sizeof(D3D11_TEXTURE2D_DESC));
-
 
 	TV_Desc.Width = BACKBUFFER_WIDTH;
 	TV_Desc.Height = BACKBUFFER_HEIGHT;
@@ -508,37 +421,23 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 	shaderResourceViewDesc.Format = TV_Desc.Format;
 	shaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DMS;
 
-
 	dev->CreateShaderResourceView(TV_TextureMap, &shaderResourceViewDesc, &TV_SRVMap);
 
-
-
-
 	//*******************************************************************************************
 	//*******************************************************************************************
 	//*******************************************************************************************
 
-
-
-
-
-
-
-
-	//OotherM.world = XMMatrixIdentity();
-	//OotherM.view = XMMatrixIdentity();
 
 #pragma endregion
 
 #pragma region Lights
 
-
 	light.LightsInit(dev, defCon, &OotherM);
 	light.SetParameters(defCon, nullptr, &OotherM);
 
 
-
 	surface.ObjTexture[0]->Release();
+
 	surface.ObjTexture[0] = TV_SRVMap;
 #pragma endregion
 
@@ -578,6 +477,13 @@ bool DEMO_APP::Run()
 			light.spot = !light.spot;
 			light.fourlights.Spot = light.On;
 		}
+	}
+
+
+	if ((GetAsyncKeyState('P') & 0x1))
+	{
+		
+
 	}
 
 	if ((GetAsyncKeyState('U')))
@@ -661,23 +567,6 @@ bool DEMO_APP::Run()
 
 	if (GetAsyncKeyState(VK_NUMPAD4))
 	{
-		/*XMMATRIX _m = XMMatrixIdentity();
-		_m = _m * XMMatrixRotationY(ToRad(-0.1f));
-
-
-		float _x = OotherM.view.r[3].m128_f32[0];
-		float _y = OotherM.view.r[3].m128_f32[1];
-		float _z = OotherM.view.r[3].m128_f32[2];
-		OotherM.view.r[3].m128_f32[0] = 0;
-		OotherM.view.r[3].m128_f32[1] = 0;
-		OotherM.view.r[3].m128_f32[2] = 0;
-
-		OotherM.view =  OotherM.view* _m;
-
-		OotherM.view.r[3].m128_f32[0] = _x;
-		OotherM.view.r[3].m128_f32[1] = _y;
-		OotherM.view.r[3].m128_f32[2] = _z;*/
-
 		light.fourlights.Directional.dir.x++;
 		if (light.fourlights.Directional.dir.x >= 50)
 			light.fourlights.Directional.dir.x = 50;
@@ -685,21 +574,6 @@ bool DEMO_APP::Run()
 	}
 	else if (GetAsyncKeyState(VK_NUMPAD6))
 	{
-		/*XMMATRIX _m = XMMatrixIdentity();
-		_m = _m * XMMatrixRotationY(ToRad(0.1f));
-
-		float _x = OotherM.view.r[3].m128_f32[0];
-		float _y = OotherM.view.r[3].m128_f32[1];
-		float _z = OotherM.view.r[3].m128_f32[2];
-		OotherM.view.r[3].m128_f32[0] = 0;
-		OotherM.view.r[3].m128_f32[1] = 0;
-		OotherM.view.r[3].m128_f32[2] = 0;
-
-		OotherM.view =  OotherM.view * _m;
-
-		OotherM.view.r[3].m128_f32[0] = _x;
-		OotherM.view.r[3].m128_f32[1] = _y;
-		OotherM.view.r[3].m128_f32[2] = _z;*/
 		light.fourlights.Directional.dir.x--;
 		if (light.fourlights.Directional.dir.x <= -50)
 		{
@@ -709,26 +583,16 @@ bool DEMO_APP::Run()
 
 	if (GetAsyncKeyState(VK_NUMPAD5))
 	{
-		//OotherM.view = OotherM.view * XMMatrixRotationX(ToRad(0.1f));
 		light.fourlights.Point.position.x -= 1 * 0.1f;
-		/*if (light.fourlights.Point.direction.x <= -50)
-		{
-		light.fourlights.Point.direction.x = -50;
-		}*/
+		
 	}
 	else if (GetAsyncKeyState(VK_NUMPAD8))
 	{
-		//OotherM.view = OotherM.view * XMMatrixRotationX(ToRad(-0.1f));
 		light.fourlights.Point.position.x += 1 * 0.1f;
-		/*if (light.fourlights.Point.direction.x >= 50)
-		{
-		light.fourlights.Point.direction.x = 50;
-		}*/
 	}
 
 	if (GetAsyncKeyState(VK_NUMPAD7))
 	{
-		//OotherM.view = OotherM.view * XMMatrixRotationX(ToRad(0.1f));
 		light.fourlights.Point.direction.x -= 1 * 0.1f;
 		if (light.fourlights.Point.direction.x <= -50)
 		{
@@ -737,7 +601,6 @@ bool DEMO_APP::Run()
 	}
 	else if (GetAsyncKeyState(VK_NUMPAD9))
 	{
-		//OotherM.view = OotherM.view * XMMatrixRotationX(ToRad(-0.1f));
 		light.fourlights.Point.direction.x += 1 * 0.1f;
 		if (light.fourlights.Point.direction.x >= 50)
 		{
@@ -767,8 +630,6 @@ bool DEMO_APP::Run()
 			lastmouseX = currMouseX;
 			lastmouseY = currMouseY;
 
-
-
 			float _x = OotherM.view.r[3].m128_f32[0];
 			float _y = OotherM.view.r[3].m128_f32[1];
 			float _z = OotherM.view.r[3].m128_f32[2];
@@ -781,7 +642,6 @@ bool DEMO_APP::Run()
 
 			_m = _m * XMMatrixRotationX(ToRad(differenceY * 0.5f));
 			OotherM.view = _m * OotherM.view;
-
 
 			_m = XMMatrixIdentity();
 			_m = _m * XMMatrixRotationY(ToRad(differenceX * 0.5f));
@@ -811,7 +671,7 @@ bool DEMO_APP::Run()
 	defCon->OMSetRenderTargets(1, &TV_RTVMap, pDSV);
 	defCon->ClearRenderTargetView(TV_RTVMap, f);
 	RunSkyThread(&SkyBox, dev, defCon, pDSV);
-	defCon->ClearRenderTargetView(TV_RTVMap, f);
+	//defCon->ClearRenderTargetView(TV_RTVMap, f);
 
 	//leftover = RenderObjects(&barrel, &surface, dev, defCon, &OotherM);
 
@@ -819,7 +679,7 @@ bool DEMO_APP::Run()
 	leftover = RenderObjects(leftover, &pyramid, dev, defCon, &OotherM);
 	leftover = RenderObjects(leftover, &knight, dev, defCon, &OotherM);
 	leftover->LightsRun(dev, defCon);
-	//Star.Run(dev, devCon);
+	
 	light.SetParameters(defCon, nullptr, &OotherM);
 
 	//*******************************************************************************************
@@ -829,17 +689,10 @@ bool DEMO_APP::Run()
 #pragma region Buffer Clearing And Skybox
 
 	defCon->OMSetRenderTargets(1, &backBuffer, pDSV);
-
-
-	//BGColor
-
 	defCon->ClearRenderTargetView(backBuffer, f);
-
 
 #pragma region Sky Box
 	RunSkyThread(&SkyBox, dev, defCon, pDSV);
-
-
 #pragma endregion
 
 #pragma endregion
@@ -847,25 +700,27 @@ bool DEMO_APP::Run()
 #pragma region Viewport1
 
 	//on the fly sort
+	//defCon->ResolveSubresource(surface.textureResource[0], 0, TV_TextureMap, 0, DXGI_FORMAT_D32_FLOAT);
+
 	leftover = RenderObjects(&barrel, &surface, dev, defCon, &OotherM);
 	leftover->LightsRun(dev, defCon);
 
 	leftover = RenderObjects(&knight, &Tree, dev, defCon, &OotherM);
 	leftover = RenderObjects(leftover, &pyramid, dev, defCon, &OotherM);
 	leftover->LightsRun(dev, defCon);
-	//Star.Run(dev, devCon);
-	//surface.FloorRun(dev, devCon);
 	light.SetParameters(defCon, nullptr, &OotherM);
 
 #pragma endregion
 	devCon->OMSetBlendState(0, 0, 0xffffffff);
 #pragma region Viewport2
+	//defCon->ResolveSubresource(surface.textureResource[0], 0, TV_TextureMap, 0, DXGI_FORMAT_D32_FLOAT);
 
 	defCon->RSSetViewports(1, &viewport[1]);
 	RunSkyThread(&SkyBox, dev, defCon, pDSV);
 
 	XMMATRIX view = OotherM.view;
 	OotherM.view = XMMatrixTranslation(0, -2, 16);
+	//defCon->ResolveSubresource(surface.textureResource[0], 0, TV_TextureMap, 0, DXGI_FORMAT_D32_FLOAT);
 
 	leftover = RenderObjects(&barrel, &surface, dev, defCon, &OotherM);
 	leftover->LightsRun(dev, defCon);
@@ -873,7 +728,6 @@ bool DEMO_APP::Run()
 	leftover = RenderObjects(&knight, &Tree, dev, defCon, &OotherM);
 	leftover = RenderObjects(leftover, &pyramid, dev, defCon, &OotherM);
 	leftover->LightsRun(dev, defCon);
-	//Star.Run(dev, devCon);
 
 	OotherM.view = view;
 	light.SetParameters(defCon, nullptr, &OotherM);
@@ -882,10 +736,11 @@ bool DEMO_APP::Run()
 
 	defCon->FinishCommandList(true, &comList);
 	devCon->ExecuteCommandList(comList, true);
+	//defCon->ResolveSubresource(surface.textureResource[0], 0, TV_TextureMap, 0, DXGI_FORMAT_D32_FLOAT);
 
 	comList->Release();
 	tester = swap->Present(0, 0);
-	
+
 	return true;
 }
 
@@ -895,12 +750,10 @@ bool DEMO_APP::Run()
 
 bool DEMO_APP::ShutDown()
 {
-
 	swap->SetFullscreenState(FALSE, NULL);    // switch to windowed mode
 
 	SAFE_RELEASE(TV_TextureMap);
 	SAFE_RELEASE(TV_RTVMap);
-	//SAFE_RELEASE(TV_SRVMap);
 	SAFE_RELEASE(defCon);
 	//SAFE_RELEASE(comList);
 	SAFE_RELEASE(devCon);
@@ -951,6 +804,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	{
 	case (WM_DESTROY) : { PostQuitMessage(0); }
 						break;
+	case (WM_SIZE) : {
+
+		int width = LOWORD(lParam);
+		int height = HIWORD(lParam);
+		swapGlobal->ResizeBuffers(1, width, height, DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH);
+
+
+	}
 	}
 	return DefWindowProc(hWnd, message, wParam, lParam);
 }
@@ -990,7 +851,6 @@ ObjectModel *RenderObjects(ObjectModel *first, ObjectModel *second, ID3D11Device
 
 	float obj1Dist = X*X + Y*Y + Z*Z;
 
-
 	pos = XMVectorZero();
 
 	pos = XMVector3TransformCoord(pos, second->world);
@@ -1003,7 +863,6 @@ ObjectModel *RenderObjects(ObjectModel *first, ObjectModel *second, ID3D11Device
 
 	if (obj1Dist > obj2Dist)
 	{
-		//Switch the order in which the cubes are drawn
 		first->LightsRun(dev, devCon);
 		return second;
 	}

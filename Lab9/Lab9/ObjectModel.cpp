@@ -136,7 +136,7 @@ bool ObjectModel::loadOBJ(
 
 		vertexIndices[i] = i;
 	}
-	
+	ComputeTangents();
 	return true;
 }
 
@@ -288,7 +288,7 @@ bool ObjectModel::LightsInit(
 	ID3D11DeviceContext *devCon,
 	ProjViewMatricies* _viewproj, bool _hasTrans)
 {
-	ComputeTangents();
+	//ComputeTangents();
 	hasTrans = _hasTrans;
 	ProjView = _viewproj;
 	HRESULT tester = 0;

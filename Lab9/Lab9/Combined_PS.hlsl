@@ -74,7 +74,7 @@ SamplerState filters : register(s0);
 float4 main(PS_IN input) : SV_TARGET
 {
 	float4 texColor = baseTexture[0].Sample(filters, input.tex);
-	if (texColor.a < 0.25f)
+	if (texColor.a < 0.1f)
 	{
 		discard;
 	}
@@ -107,6 +107,7 @@ float4 main(PS_IN input) : SV_TARGET
 
 	location = normalize((-pLight.PointDirection) + ViewDir);
 	intensity = max(pow(saturate(dot(normal, location)), 25.0f), 0);
+
 	////PointLight
 	float3 PointPixToLight = (pLight.PointPosition.xyz - input.worldPosition.xyz);
 	float  PointD = length(PointPixToLight); 
@@ -128,7 +129,7 @@ float4 main(PS_IN input) : SV_TARGET
 				PointResult += PointLightAmmount * texColor * pLight.PointColor;
 				PointResult /= pLight.PointAttenuation.x + (pLight.PointAttenuation.y * PointD) + (pLight.PointAttenuation.z * PointD * PointD);
 			}
-			PointResult = saturate(PointResult + PointAmbient) + intensity;
+			PointResult = saturate(PointResult + PointAmbient + intensity);
 		}
 
 
@@ -160,7 +161,7 @@ float4 main(PS_IN input) : SV_TARGET
 		SpotResult *= pow(max(dot(-SpotPixToLight, sLight.SpotDirection), 0.0f), sLight.SpotCone);
 		}
 
-		SpotResult = saturate(SpotResult + SpotAmbient) + intensity;
+		SpotResult = saturate(SpotResult + SpotAmbient + intensity);
 		}
 
 		float4 allColors = (DirectionalResult + PointResult + SpotResult);

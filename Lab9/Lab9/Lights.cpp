@@ -39,7 +39,6 @@ bool Lights::Init(XMFLOAT3 pos,
 bool Lights::Run(ID3D11Device* dev,
 	ID3D11DeviceContext* devCon)
 {
-
 	devCon->UpdateSubresource(LightBuffer, 0, NULL, &light, 0, 0);
 	devCon->PSSetConstantBuffers(0, 1, &LightBuffer);
 
@@ -57,7 +56,6 @@ bool Lights::LightsInit(ID3D11Device * dev,
 	ID3D11DeviceContext *devCon,
 	ProjViewMatricies* _viewproj)
 {
-
 	//add pos later
 	fourlights.Directional.dir = XMFLOAT3(5.0f, 5.0f, 0.0f);
 	fourlights.Directional.ambient = XMFLOAT4(0.1f, 0.1f, 0.1f, 1.0f);
@@ -74,7 +72,7 @@ bool Lights::LightsInit(ID3D11Device * dev,
 	fourlights.Spot.spotRange = 5.0f;
 	fourlights.Spot.direction = XMFLOAT3(0, 0, 1.0f);
 	fourlights.Spot.attentuation = XMFLOAT3(0.1f, 0.0f, 0.0f);
-	fourlights.Spot.color = XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f);
+	fourlights.Spot.color = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
 	fourlights.Spot.ambient = XMFLOAT4(0.3f, 0.3f, 0.3f, 1.0f);
 	fourlights.Spot.SpotCone = 3;
 
@@ -97,10 +95,7 @@ bool Lights::LightsInit(ID3D11Device * dev,
 	lightBufDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 	lightBufDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 	lightBufDesc.MiscFlags = 0;
-
 	tester = dev->CreateBuffer(&lightBufDesc, NULL, &LightBuffer);
-
-
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
 
 	ZeroMemory(&mappedResource, sizeof(D3D11_MAPPED_SUBRESOURCE));
@@ -111,19 +106,16 @@ bool Lights::LightsInit(ID3D11Device * dev,
 
 	devCon->PSSetConstantBuffers(0, 1, &LightBuffer);
 
-
 	return true;
 
 }
 
 
-bool Lights::SetParameters(ID3D11DeviceContext* devCon, AllofTheLights* _lights, ProjViewMatricies* _viewproj)//,
-	/*LightColor* colors, LightPosition* positions)*/
+bool Lights::SetParameters(ID3D11DeviceContext* devCon, AllofTheLights* _lights, ProjViewMatricies* _viewproj)
+	
 {
 	HRESULT tester;
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
-	//fourlights = *_lights;
-	//fourlights.Point.position = XMFLOAT3(_viewproj->view.r[3].m128_f32[0], _viewproj->view.r[3].m128_f32[1], _viewproj->view.r[3].m128_f32[2]);
 	fourlights.Spot.position = XMFLOAT3(_viewproj->view.r[3].m128_f32[0], _viewproj->view.r[3].m128_f32[1], _viewproj->view.r[3].m128_f32[2]);
 	fourlights.Spot.direction = XMFLOAT3(_viewproj->view.r[2].m128_f32[0], _viewproj->view.r[2].m128_f32[1], _viewproj->view.r[2].m128_f32[2]);
 	ZeroMemory(&mappedResource, sizeof(D3D11_MAPPED_SUBRESOURCE));
@@ -143,9 +135,7 @@ bool Lights::SetParameters(ID3D11DeviceContext* devCon, AllofTheLights* _lights,
 bool Lights::LightsRun(ID3D11Device* dev,
 	ID3D11DeviceContext* devCon)
 {
-
 	devCon->UpdateSubresource(LightBuffer, 0, NULL, &light, 0, 0);
 	devCon->PSSetConstantBuffers(0, 1, &LightBuffer);
-
 	return true;
 }
