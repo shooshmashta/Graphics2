@@ -55,9 +55,9 @@ struct ObjectModel
 	//Lights light;
 
 	//all texture stuff
-	ID3D11ShaderResourceView * ObjTexture[2];
+	ID3D11ShaderResourceView * ObjTexture[3];
 	ID3D11SamplerState* ObjTextureSamplerState;
-	ID3D11Resource * textureResource[2];
+	ID3D11Resource * textureResource[3];
 
 	//blending
 	
@@ -80,6 +80,7 @@ struct ObjectModel
 	bool LightsInit(XMFLOAT3 pos, 
 		const wchar_t* path,
 		const wchar_t* norm,
+		const wchar_t* spec,
 		ID3D11Device * dev,
 		ID3D11DeviceContext *devCon,
 		ProjViewMatricies* _viewproj, bool trans);

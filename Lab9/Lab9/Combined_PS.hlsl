@@ -67,7 +67,7 @@ struct PS_IN
 	//float4 worldPos : WORLD;
 };
 
-Texture2D baseTexture[2] : register(t0);
+Texture2D baseTexture[3] : register(t0);
 //Texture2D baseTexture : register(t0);
 SamplerState filters : register(s0);
 
@@ -83,7 +83,7 @@ float4 main(PS_IN input) : SV_TARGET
 	float ViewDir = normalize(input.View - input.worldPosition);
 	float3 location = normalize((-dLight.DirectDirection) + ViewDir);
 	float  intensity = max(pow(saturate(dot(normal, location)), 25.0f), 0);
-
+	float4 spec = baseTexture[2].Sample(filters, input.tex);
 	//clip(texColor.a - 0.25f);
 
 
@@ -103,10 +103,10 @@ float4 main(PS_IN input) : SV_TARGET
 
 
 //	Directional Light
-	float4 DirectionalResult = saturate(dot(location, normal) * texColor) + (dLight.DirectAmbient * texColor) + intensity;
+	float4 DirectionalResult = saturate(dot(location, normal) * texColor) + (dLight.DirectAmbient * texColor) + (intensity* spec);
 
 	location = normalize((-pLight.PointDirection) + ViewDir);
-	intensity = max(pow(saturate(dot(normal, location)), 25.0f), 0);
+	intensity = max(pow(saturate(dot(normal, location)), 25.0f), 0) * spec;
 
 	////PointLight
 	float3 PointPixToLight = (pLight.PointPosition.xyz - input.worldPosition.xyz);
@@ -129,7 +129,7 @@ float4 main(PS_IN input) : SV_TARGET
 				PointResult += PointLightAmmount * texColor * pLight.PointColor;
 				PointResult /= pLight.PointAttenuation.x + (pLight.PointAttenuation.y * PointD) + (pLight.PointAttenuation.z * PointD * PointD);
 			}
-			PointResult = saturate(PointResult + PointAmbient + intensity);
+			PointResult = saturate(PointResult + PointAmbient + (intensity* spec));
 		}
 
 
@@ -161,7 +161,7 @@ float4 main(PS_IN input) : SV_TARGET
 		SpotResult *= pow(max(dot(-SpotPixToLight, sLight.SpotDirection), 0.0f), sLight.SpotCone);
 		}
 
-		SpotResult = saturate(SpotResult + SpotAmbient + intensity);
+		SpotResult = saturate(SpotResult + SpotAmbient + (intensity* spec));
 		}
 
 		float4 allColors = (DirectionalResult + PointResult + SpotResult);

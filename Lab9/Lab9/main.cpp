@@ -110,6 +110,7 @@ class DEMO_APP
 	ProjViewMatricies OotherM;
 #pragma endregion
 
+	bool rtv = false;
 
 
 
@@ -168,7 +169,6 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 
 	OotherM.view = XMMatrixIdentity();
 
-
 	rotate = 0;
 
 	bool everyother = true;
@@ -192,8 +192,8 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 
 	RECT window_size = { 0, 0, BACKBUFFER_WIDTH, BACKBUFFER_HEIGHT };
 	AdjustWindowRect(&window_size, WS_OVERLAPPEDWINDOW, false);
-
-	window = CreateWindow(L"DirectXApplication", L"Lab 1a Line Land", WS_OVERLAPPEDWINDOW & ~(WS_THICKFRAME | WS_MAXIMIZEBOX),
+	//resizing
+	window = CreateWindow(L"DirectXApplication", L"Lab 1a Line Land", WS_OVERLAPPEDWINDOW /*& ~(WS_THICKFRAME | WS_MAXIMIZEBOX)*/,
 		CW_USEDEFAULT, CW_USEDEFAULT, window_size.right - window_size.left, window_size.bottom - window_size.top,
 		NULL, NULL, application, this);
 
@@ -215,8 +215,8 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 	scd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;      // how swap chain is to be used
 	scd.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;// | D3D11_CREATE_DEVICE_DEBUG;
 	scd.OutputWindow = window;                              // the window to be used
-	scd.SampleDesc.Count = 2;                               // how many multisamples
-	scd.SampleDesc.Quality = D3D11_STANDARD_MULTISAMPLE_PATTERN;
+	scd.SampleDesc.Count = 1;                               // how many multisamples
+	scd.SampleDesc.Quality = 0;
 	scd.Windowed = TRUE;                                    // windowed/full-screen mode
 	scd.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
 	scd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
@@ -273,8 +273,8 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 	descDepth.ArraySize = 1;
 	descDepth.MiscFlags = NULL;
 	descDepth.CPUAccessFlags = NULL;
-	descDepth.SampleDesc.Count = 2;
-	descDepth.SampleDesc.Quality = D3D11_STANDARD_MULTISAMPLE_PATTERN;
+	descDepth.SampleDesc.Count = 1;
+	descDepth.SampleDesc.Quality = 0;
 	descDepth.Width = BACKBUFFER_WIDTH;
 	descDepth.Height = BACKBUFFER_HEIGHT;
 	descDepth.Usage = D3D11_USAGE_DEFAULT;
@@ -320,7 +320,8 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 
 
 	descDSV.Format = DXGI_FORMAT_D32_FLOAT;
-	descDSV.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DMS;
+	descDSV.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+	descDSV.Texture2D.MipSlice = 0;
 	descDSV.Flags = NULL;
 
 	tester = dev->CreateDepthStencilView(pDepthStencil, // Depth stencil texture
@@ -377,11 +378,11 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 	}
 	SkyBox.vertexIndices = skyIndex;
 	SkyBox.SkyInit(L"skyb.dds", dev, defCon, &OotherM);
-	Tree.LightsInit(XMFLOAT3(1, -2, 10), L"Tree.dds", L"tree_normal.dds", dev, defCon, &OotherM, true);
-	pyramid.LightsInit(XMFLOAT3(1, 0, 5), L"energy_seamless.dds", L"energy_seamless_normal.dds", dev, defCon, &OotherM, true);
-	surface.LightsInit(XMFLOAT3(0, -2, 4), L"grass_seamless.dds", L"grass_seamless_normal.dds", dev, defCon, &OotherM, false);
-	knight.LightsInit(XMFLOAT3(1, -2, 2), L"knight.dds", L"Knight_normal.dds", dev, defCon, &OotherM, true);
-	barrel.LightsInit(XMFLOAT3(0, -10, 20), L"barrel.dds", L"barrel_normal.dds", dev, defCon, &OotherM, false);
+	Tree.LightsInit(XMFLOAT3(1, -2, 10), L"Tree.dds", L"tree_normal.dds", L"tree_spec.dds", dev, defCon, &OotherM, true);
+	pyramid.LightsInit(XMFLOAT3(1, 0, 5), L"energy_seamless.dds", L"energy_seamless_normal.dds", L"energy_seamless_spec.dds", dev, defCon, &OotherM, true);
+	surface.LightsInit(XMFLOAT3(0, -2, 4), L"grass_seamless.dds", L"grass_seamless_normal.dds", L"grass_seamless_spec.dds", dev, defCon, &OotherM, false);
+	knight.LightsInit(XMFLOAT3(1, -2, 2), L"Knight.dds", L"Knight_normal.dds", L"knight_spec.dds", dev, defCon, &OotherM, true);
+	barrel.LightsInit(XMFLOAT3(0, -10, 20), L"barrel.dds", L"barrel_normal.dds", L"barrel_spec.dds", dev, defCon, &OotherM, false);
 
 	//*******************************************************************************************
 	//**********************************Setup Render To Texture**********************************
@@ -397,9 +398,9 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 	TV_Desc.Height = BACKBUFFER_HEIGHT;
 	TV_Desc.MipLevels = 1;
 	TV_Desc.ArraySize = 1;
-	TV_Desc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-	TV_Desc.SampleDesc.Count = 2;
-	TV_Desc.SampleDesc.Quality = D3D11_STANDARD_MULTISAMPLE_PATTERN;
+	TV_Desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	TV_Desc.SampleDesc.Count = 1;
+	TV_Desc.SampleDesc.Quality = 0;
 	TV_Desc.Usage = D3D11_USAGE_DEFAULT;
 	TV_Desc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
 	TV_Desc.CPUAccessFlags = 0;
@@ -408,12 +409,15 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 	dev->CreateTexture2D(&TV_Desc, NULL, &TV_TextureMap);
 
 	renderTargetViewDesc.Format = TV_Desc.Format;
-	renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2DMS;
+	renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
+	renderTargetViewDesc.Texture2D.MipSlice = 0;
 
 	dev->CreateRenderTargetView(TV_TextureMap, NULL, &TV_RTVMap);
 
 	shaderResourceViewDesc.Format = TV_Desc.Format;
-	shaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DMS;
+	shaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+	shaderResourceViewDesc.Texture2D.MipLevels = 1;
+	shaderResourceViewDesc.Texture2D.MostDetailedMip = 0;
 
 	dev->CreateShaderResourceView(TV_TextureMap, NULL, &TV_SRVMap);
 
@@ -433,6 +437,7 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 	surface.ObjTexture[0]->Release();
 	surface.ObjTexture[0] = nullptr;
 	surface.ObjTexture[0] = TV_SRVMap;
+
 #pragma endregion
 
 
@@ -473,6 +478,10 @@ bool DEMO_APP::Run()
 		}
 	}
 
+	if ((GetAsyncKeyState('P') & 0x1))
+	{
+		rtv = !rtv;
+	}
 
 	XMFLOAT4 viewMovement;
 	if (GetAsyncKeyState('W'))
@@ -651,6 +660,19 @@ bool DEMO_APP::Run()
 	leftover->LightsRun(dev, defCon);
 	
 	light.SetParameters(defCon, nullptr, &OotherM);
+	//surface.textureResource[0]->Release();
+	if (rtv)
+	{
+		surface.ObjTexture[0]->Release();
+		surface.ObjTexture[0] = nullptr;
+		dev->CreateShaderResourceView(surface.textureResource[0], NULL, &surface.ObjTexture[0]);
+	}
+	else
+	{
+		surface.ObjTexture[0]->Release();
+		surface.ObjTexture[0] = nullptr;
+		dev->CreateShaderResourceView(TV_TextureMap, NULL, &surface.ObjTexture[0]);
+	}
 
 	//*******************************************************************************************
 	//*******************************************************************************************
@@ -670,7 +692,6 @@ bool DEMO_APP::Run()
 #pragma region Viewport1
 
 	//on the fly sort
-	//defCon->ResolveSubresource(surface.textureResource[0], 0, TV_TextureMap, 0, DXGI_FORMAT_D32_FLOAT);
 
 	leftover = RenderObjects(&barrel, &surface, dev, defCon, &OotherM);
 	leftover->LightsRun(dev, defCon);
@@ -778,6 +799,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 		int width = LOWORD(lParam);
 		int height = HIWORD(lParam);
+		
 		swapGlobal->ResizeBuffers(1, width, height, DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH);
 
 

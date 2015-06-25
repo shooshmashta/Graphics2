@@ -9,7 +9,9 @@ ObjectModel::~ObjectModel()
 		if (!isSky)
 		{
 			SAFE_RELEASE(textureResource[1]);
+			SAFE_RELEASE(textureResource[2]);
 			SAFE_RELEASE(ObjTexture[1]);
+			SAFE_RELEASE(ObjTexture[2]);
 		}
 		SAFE_RELEASE(ObjTextureSamplerState);
 	}
@@ -282,6 +284,7 @@ bool ObjectModel::LightsInit(
 	XMFLOAT3 pos,
 	const wchar_t* path,
 	const wchar_t* norm,
+	const wchar_t* spec,
 	ID3D11Device * dev,
 	ID3D11DeviceContext *devCon,
 	ProjViewMatricies* _viewproj, bool _hasTrans)
@@ -360,6 +363,7 @@ bool ObjectModel::LightsInit(
 
 	tester = CreateDDSTextureFromFile(dev, path, &textureResource[0], &ObjTexture[0]);
 	tester = CreateDDSTextureFromFile(dev, norm, &textureResource[1], &ObjTexture[1]);
+	tester = CreateDDSTextureFromFile(dev, spec, &textureResource[2], &ObjTexture[2]);
 
 
 	D3D11_SAMPLER_DESC sampleDec;
@@ -497,7 +501,7 @@ bool ObjectModel::LightsRun(
 	strides = sizeof(StrideStruct);
 	offsets = 0;
 
-	devCon->PSSetShaderResources(0, 2, ObjTexture);
+	devCon->PSSetShaderResources(0, 3, ObjTexture);
 	devCon->IASetVertexBuffers(0, 1, &VertBuff, &strides, &offsets);
 	devCon->IASetIndexBuffer(IndexBuff, DXGI_FORMAT_R32_UINT, offsets);
 
@@ -520,7 +524,7 @@ bool ObjectModel::LightsRun(
 
 		devCon->DrawIndexed(vertexIndices.size(), 0, 0);
 
-		devCon->PSSetShaderResources(0, 2, ObjTexture);
+		devCon->PSSetShaderResources(0, 3, ObjTexture);
 		devCon->IASetVertexBuffers(0, 1, &VertBuff, &strides, &offsets);
 		devCon->IASetIndexBuffer(IndexBuff, DXGI_FORMAT_R32_UINT, offsets);
 
