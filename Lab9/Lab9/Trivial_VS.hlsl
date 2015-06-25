@@ -1,46 +1,63 @@
 #pragma pack_matrix(row_major)
 
+cbuffer MatrixBuffer
+{
+	matrix world;
+	matrix view;
+	matrix proj;
+};
+
+
+
+cbuffer cbPerScene
+{
+	float4 otherPos[4];
+};
+
+
 struct V_IN
 {
-	float4 posL : POSITION;
-	float4 colorOut : COLOR;
+	float4 position : POSITION;
+	float2 tex : UVS;
+	float3 normal : NORMS;
+	float4 tangent : TANG;
+	float4 otherPos : OTHERPOS;
+	//float3 binormal : BINORMAL;
+
+
 };
 
-struct V_OUT
+struct GS_OUT
 {
-	float4 colorOut : COLOR;
-	float4 posH : SV_POSITION;
+	float4 position : SV_POSITION;
+	float2 tex : TEXCOORD0;
+	float3 normal : NORMAL;
+	float4 worldPosition: WORLD;
+	float4 View : VIEW;
+	float4 tangent : TANGENTS;
+	//float3 binormal : BINORMAL;
 };
 
-cbuffer OBJECT : register(b0)
+GS_OUT  main(V_IN input, uint instanceID : SV_InstanceID)
 {
-	float4x4 worldMatrix;
-};
+	GS_OUT output;
 
-cbuffer SCENE : register(b1)
-{
-	float4x4 worldMatrix1;
-	float4x4 viewMatrix;
-	float4x4 projectionMatrix;
-};
+	float4 worldpos;
+	float4 outputPos = float4(input.position.xyz, 1.0f);
+		outputPos += input.otherPos;
+		outputPos = mul(outputPos, world);
 
-V_OUT main(V_IN input)
-{
-	V_OUT output = (V_OUT)0;
-	
-	// ensures translation is preserved during matrix multiply  
-	float4 localH = float4(input.posL.xyz, 1);
-	
-	// move local space vertex from vertex buffer into world space.
-	localH = mul(localH, worldMatrix1);
-	
-	// TODO: Move into view space, then projection space
-	localH = mul(localH, viewMatrix);
-	localH = mul(localH, projectionMatrix);
+	output.worldPosition = outputPos;
+	outputPos = mul(outputPos, view);
+	output.View = outputPos;
 
-	output.posH = localH;
-	output.colorOut = input.colorOut;
-	
+	output.position = mul(outputPos, proj);
 
-	return output; // send projected vertex to the rasterizer stage
+	output.tex = input.tex;
+
+	output.normal = mul(input.normal, (float3x3) world);
+	output.tangent = mul(input.tangent, world);
+	//output.binormal = mul(input.binormal, (float3x3)world);
+
+	return output;
 }

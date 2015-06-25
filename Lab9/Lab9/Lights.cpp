@@ -61,7 +61,7 @@ bool Lights::LightsInit(ID3D11Device * dev,
 	fourlights.Directional.ambient = XMFLOAT4(0.1f, 0.1f, 0.1f, 1.0f);
 	fourlights.Directional.color = XMFLOAT4(0.2f, 0.2f, 0.2f, 1.0f);
 
-	fourlights.Point.position = XMFLOAT3(0, 1, 0);
+	fourlights.Point.position = XMFLOAT3(0, 1, 5);
 	fourlights.Point.PointRange = 10.0f;
 	fourlights.Point.direction = XMFLOAT4(0, 0, -10, 0);
 	fourlights.Point.attentuation = XMFLOAT3(0.0f, 0.1f, 0.0f);

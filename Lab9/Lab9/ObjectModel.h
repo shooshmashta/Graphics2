@@ -20,21 +20,33 @@ struct Simple_Vert
 
 };
 
+struct InstancedObj
+{
+	XMFLOAT4 m_newPos[4];
+};
 
 
 
 struct ObjectModel
 {
-
 	~ObjectModel();
 
 	XMMATRIX world = XMMatrixIdentity();
+
+	bool hasInstanced = false;
 	bool hasTexture = false;
 	bool hasLight = false;
+	bool hasTrans = false;
 	bool isSky = false;
+
 	ID3D11Buffer* VertBuff;             // Models vertex buffer
 	ID3D11Buffer* IndexBuff;            // Models index buffer
 	ID3D11Buffer* matrixLocationBuffer[2];
+	
+	//instancing
+	ID3D11Buffer* InstanceBuff;
+	InstancedObj instances;
+	int count;
 
 	ID3D11InputLayout *layout;
 	ID3D11PixelShader *pixelShader;
@@ -53,15 +65,10 @@ struct ObjectModel
 	ID3D11RasterizerState* CCWcullMode;
 	ID3D11RasterizerState* CWcullMode;
 	
-	bool hasTrans = false;
-	
-	
-	vector< unsigned int > vertexIndices, uvIndices, normalIndices;
-	
-	vector<Simple_Vert> v_vertices;
 
+	vector< unsigned int > vertexIndices, uvIndices, normalIndices;
+	vector<Simple_Vert> v_vertices;
 	vector<StrideStruct> m_stride;
-	
 	ProjViewMatricies  *ProjView;
 
 
@@ -86,6 +93,10 @@ struct ObjectModel
 		ID3D11Device* dev,
 		ID3D11DeviceContext* devCon);
 
+	bool InstancedRun(
+		ID3D11Device* dev,
+		ID3D11DeviceContext* devCon);
+
 	bool FloorRun(
 		ID3D11Device* dev,
 		ID3D11DeviceContext* devCon);
@@ -97,12 +108,19 @@ struct ObjectModel
 		ID3D11DeviceContext *devCon,
 		ProjViewMatricies* _viewproj);
 
-	bool ObjectModel::Init(XMFLOAT3 pos,
+	bool Init(XMFLOAT3 pos,
 		ID3D11Device* dev,
 		ID3D11DeviceContext* devCon,
 		ProjViewMatricies* _viewproj);
 
-	bool ObjectModel::Run(
+	bool InstancedInit(XMFLOAT3 pos,
+		const wchar_t* path,
+		const wchar_t* norm,
+		ID3D11Device * dev,
+		ID3D11DeviceContext *devCon,
+		ProjViewMatricies* _viewproj);
+
+	bool Run(
 		ID3D11Device* dev,
 		ID3D11DeviceContext* devCon);
 

@@ -356,7 +356,7 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 	int *Count = &count;
 
 	threads[0] = thread(LoadModelOBJThread, "SkyBox.obj", &SkyBox);
-	threads[1] = thread(LoadModelOBJThread, "pyramid1.obj", &pyramid);
+	threads[1] = thread(LoadModelOBJThread, "sphere.obj", &pyramid);
 	threads[2] = thread(LoadModelOBJThread, "Surface.obj", &surface);
 	threads[3] = thread(LoadModelOBJThread, "knight.obj", &knight);
 	threads[4] = thread(LoadModelOBJThread, "barrel.obj", &barrel);
@@ -367,12 +367,6 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 	{
 		threads[i].join();
 	}
-
-	//SkyBox.loadOBJ("SkyBox.obj");
-	//pyramid.loadOBJ("pyramid1.obj");
-	//surface.loadOBJ("Surface.obj");
-	//knight.loadOBJ("knight.obj");
-	//barrel.loadOBJ("barrel.obj");
 
 	vector<unsigned int> skyIndex;
 	int l = SkyBox.vertexIndices.size() - 1;
@@ -385,7 +379,7 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 	SkyBox.SkyInit(L"skyb.dds", dev, defCon, &OotherM);
 	Tree.LightsInit(XMFLOAT3(1, -2, 10), L"Tree.dds", L"tree_normal.dds", dev, defCon, &OotherM, true);
 	pyramid.LightsInit(XMFLOAT3(1, 0, 5), L"energy_seamless.dds", L"energy_seamless_normal.dds", dev, defCon, &OotherM, true);
-	surface.LightsInit(XMFLOAT3(0, -3, 4), L"grass_seamless.dds", L"grass_seamless_normal.dds", dev, defCon, &OotherM, false);
+	surface.LightsInit(XMFLOAT3(0, -2, 4), L"grass_seamless.dds", L"grass_seamless_normal.dds", dev, defCon, &OotherM, false);
 	knight.LightsInit(XMFLOAT3(1, -2, 2), L"knight.dds", L"Knight_normal.dds", dev, defCon, &OotherM, true);
 	barrel.LightsInit(XMFLOAT3(0, -10, 20), L"barrel.dds", L"barrel_normal.dds", dev, defCon, &OotherM, false);
 
@@ -416,12 +410,12 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 	renderTargetViewDesc.Format = TV_Desc.Format;
 	renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2DMS;
 
-	dev->CreateRenderTargetView(TV_TextureMap, &renderTargetViewDesc, &TV_RTVMap);
+	dev->CreateRenderTargetView(TV_TextureMap, NULL, &TV_RTVMap);
 
 	shaderResourceViewDesc.Format = TV_Desc.Format;
 	shaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DMS;
 
-	dev->CreateShaderResourceView(TV_TextureMap, &shaderResourceViewDesc, &TV_SRVMap);
+	dev->CreateShaderResourceView(TV_TextureMap, NULL, &TV_SRVMap);
 
 	//*******************************************************************************************
 	//*******************************************************************************************
@@ -437,7 +431,7 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 
 
 	surface.ObjTexture[0]->Release();
-
+	surface.ObjTexture[0] = nullptr;
 	surface.ObjTexture[0] = TV_SRVMap;
 #pragma endregion
 
@@ -480,36 +474,12 @@ bool DEMO_APP::Run()
 	}
 
 
-	if ((GetAsyncKeyState('P') & 0x1))
-	{
-		
-
-	}
-
-	if ((GetAsyncKeyState('U')))
-	{
-
-	}
-	else if ((GetAsyncKeyState('J')))
-	{
-
-	}
-
-	if ((GetAsyncKeyState('H')))
-	{
-
-	}
-	else if ((GetAsyncKeyState('K')))
-	{
-
-	}
-
 	XMFLOAT4 viewMovement;
 	if (GetAsyncKeyState('W'))
 	{
 		viewMovement.x = 0;
 		viewMovement.y = 0;
-		viewMovement.z = 0.01f;
+		viewMovement.z = 0.03f;
 
 		XMMATRIX _m = XMMatrixIdentity();
 		_m = XMMatrixTranslation(viewMovement.x, viewMovement.y, viewMovement.z);
@@ -518,7 +488,7 @@ bool DEMO_APP::Run()
 	}
 	if (GetAsyncKeyState('A'))
 	{
-		viewMovement.x = -0.01f;
+		viewMovement.x = -0.03f;
 		viewMovement.y = 0;
 		viewMovement.z = 0.0f;
 		XMMATRIX _m = XMMatrixIdentity();
@@ -529,7 +499,7 @@ bool DEMO_APP::Run()
 	{
 		viewMovement.x = 0;
 		viewMovement.y = 0;
-		viewMovement.z = -0.01f;
+		viewMovement.z = -0.03f;
 		XMMATRIX _m = XMMatrixIdentity();
 		_m = XMMatrixTranslation(viewMovement.x, viewMovement.y, viewMovement.z);
 		OotherM.view = _m * OotherM.view;
@@ -537,27 +507,27 @@ bool DEMO_APP::Run()
 	if (GetAsyncKeyState('D'))
 	{
 
-		viewMovement.x = 0.01f;
+		viewMovement.x = 0.03f;
 		viewMovement.y = 0;
 		viewMovement.z = 0;
 		XMMATRIX _m = XMMatrixIdentity();
 		_m = XMMatrixTranslation(viewMovement.x, viewMovement.y, viewMovement.z);
 		OotherM.view = _m * OotherM.view;
 	}
-	if (GetAsyncKeyState('R'))
+	if (GetAsyncKeyState('R') || GetAsyncKeyState(VK_SPACE))
 	{
 
 		viewMovement.x = 0;
-		viewMovement.y = 0.01f;
+		viewMovement.y = 0.03f;
 		viewMovement.z = 0;
 		XMMATRIX _m = XMMatrixIdentity();
 		_m = XMMatrixTranslation(viewMovement.x, viewMovement.y, viewMovement.z);
 		OotherM.view = _m * OotherM.view;
 	}
-	if (GetAsyncKeyState('F'))
+	if (GetAsyncKeyState('F') || GetAsyncKeyState(VK_CONTROL) || GetAsyncKeyState('C'))
 	{
 		viewMovement.x = 0;
-		viewMovement.y = -0.01f;
+		viewMovement.y = -0.03f;
 		viewMovement.z = 0;
 		XMMATRIX _m = XMMatrixIdentity();
 		_m = XMMatrixTranslation(viewMovement.x, viewMovement.y, viewMovement.z);

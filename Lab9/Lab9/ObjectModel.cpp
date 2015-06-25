@@ -13,23 +13,21 @@ ObjectModel::~ObjectModel()
 		}
 		SAFE_RELEASE(ObjTextureSamplerState);
 	}
-
+	if (hasInstanced)
+	{
+		SAFE_RELEASE(InstanceBuff);
+	}
 	if (hasTrans)
 	{
-
 		//blenders
 		SAFE_RELEASE(Transparency);
 		SAFE_RELEASE(CCWcullMode);
 		SAFE_RELEASE(CWcullMode);
-
 	}
-
 	if (!hasLight)
 	{
 		SAFE_RELEASE(matrixLocationBuffer[0]);
-
 	}
-
 	SAFE_RELEASE(matrixLocationBuffer[1]);
 	SAFE_RELEASE(VertBuff);             // Models vertex buffer
 	SAFE_RELEASE(IndexBuff);            // Models index buffer
@@ -147,7 +145,7 @@ bool ObjectModel::SkyInit(const wchar_t* path,
 	ID3D11DeviceContext *devCon,
 	ProjViewMatricies* _viewproj)
 {
-	
+
 	ProjView = _viewproj;
 
 	ProjView->world.r[3].m128_f32[0] = ProjView->view.r[3].m128_f32[0];
@@ -343,7 +341,7 @@ bool ObjectModel::LightsInit(
 		D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 
 		{ "TANG", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0,
-		D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 }, 
+		D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		/*
 		{ "BINORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0,
 		D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },*/
@@ -362,7 +360,7 @@ bool ObjectModel::LightsInit(
 
 	tester = CreateDDSTextureFromFile(dev, path, &textureResource[0], &ObjTexture[0]);
 	tester = CreateDDSTextureFromFile(dev, norm, &textureResource[1], &ObjTexture[1]);
-	
+
 
 	D3D11_SAMPLER_DESC sampleDec;
 	sampleDec.Filter = D3D11_FILTER_ANISOTROPIC;
@@ -542,6 +540,274 @@ bool ObjectModel::LightsRun(
 
 	return true;
 }
+
+
+
+
+
+bool ObjectModel::InstancedInit(XMFLOAT3 pos,
+	const wchar_t* path,
+	const wchar_t* norm,
+	ID3D11Device * dev,
+	ID3D11DeviceContext *devCon,
+	ProjViewMatricies* _viewproj)
+{
+	//ComputeTangents();
+
+	ProjView = _viewproj;
+	HRESULT tester = 0;
+
+	hasLight = true;
+	hasTexture = true;
+	hasInstanced = true;
+	world.r[3] = XMVectorSet(pos.x, pos.y, pos.z, 1.0f);
+
+	ProjView->world = world;
+
+#pragma region Obj Subresource
+
+
+	D3D11_BUFFER_DESC assigner;
+	assigner.Usage = D3D11_USAGE_IMMUTABLE;
+	assigner.CPUAccessFlags = NULL;
+	assigner.MiscFlags = NULL;
+	assigner.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+	assigner.ByteWidth = sizeof(StrideStruct) * m_stride.size();
+	assigner.StructureByteStride = sizeof(StrideStruct);
+
+	D3D11_SUBRESOURCE_DATA obj_verts;
+	obj_verts.pSysMem = &m_stride[0];
+	obj_verts.SysMemPitch = 0;
+	obj_verts.SysMemSlicePitch = 0;
+
+	tester = dev->CreateBuffer(&assigner, &obj_verts, &VertBuff);
+
+
+
+#pragma endregion
+
+
+
+#pragma region Obj Shader
+	tester = dev->CreatePixelShader(Trivial_PS,
+		sizeof(Trivial_PS), NULL, &pixelShader);
+
+	tester = dev->CreateVertexShader(Trivial_VS,
+		sizeof(Trivial_VS), NULL, &vertexShader);
+
+	D3D11_INPUT_ELEMENT_DESC vLayout[] =
+	{
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0,
+		D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+
+		{ "UVS", 0, DXGI_FORMAT_R32G32_FLOAT, 0,
+		D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+
+		{ "NORMS", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0,
+		D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+
+		{ "TANG", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0,
+		D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		
+		{ "OTHERPOS", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 1,
+		D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+	};
+
+
+	tester = dev->CreateInputLayout(vLayout, 5, Trivial_VS,
+		sizeof(Trivial_VS), &layout);
+
+
+#pragma endregion
+
+
+#pragma region ObjTextures
+
+
+	tester = CreateDDSTextureFromFile(dev, path, &textureResource[0], &ObjTexture[0]);
+	tester = CreateDDSTextureFromFile(dev, norm, &textureResource[1], &ObjTexture[1]);
+
+
+	D3D11_SAMPLER_DESC sampleDec;
+	sampleDec.Filter = D3D11_FILTER_ANISOTROPIC;
+	sampleDec.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+	sampleDec.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+	sampleDec.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+	sampleDec.MinLOD = (-FLT_MAX);
+	sampleDec.MaxLOD = (FLT_MAX);
+	sampleDec.MipLODBias = 0.0f;
+	sampleDec.MaxAnisotropy = 1;
+	sampleDec.ComparisonFunc = D3D11_COMPARISON_NEVER;
+
+	tester = dev->CreateSamplerState(&sampleDec, &ObjTextureSamplerState);
+
+	devCon->PSSetSamplers(0, 1, &ObjTextureSamplerState);
+
+
+#pragma endregion
+
+#pragma region Obj IndexBuffer
+	//index buffer settings
+	D3D11_BUFFER_DESC indexBuffer;
+	indexBuffer.Usage = D3D11_USAGE_IMMUTABLE;
+	indexBuffer.MiscFlags = NULL;
+	indexBuffer.CPUAccessFlags = NULL;
+	indexBuffer.BindFlags = D3D11_BIND_INDEX_BUFFER;
+	indexBuffer.ByteWidth = sizeof(unsigned int) * vertexIndices.size();
+	indexBuffer.StructureByteStride = sizeof(unsigned int);
+
+	D3D11_SUBRESOURCE_DATA indexSub;
+	indexSub.pSysMem = &vertexIndices[0];
+	indexSub.SysMemPitch = 0;
+	indexSub.SysMemSlicePitch = 0;
+
+	tester = dev->CreateBuffer(&indexBuffer, &indexSub, &IndexBuff);
+	devCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+#pragma endregion
+
+#pragma region Locations / constantBuffers
+
+	D3D11_BUFFER_DESC othermatrix;
+	othermatrix.ByteWidth = sizeof(ProjViewMatricies);
+	othermatrix.Usage = D3D11_USAGE_DYNAMIC;
+	othermatrix.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	othermatrix.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	othermatrix.MiscFlags = NULL;
+
+	tester = dev->CreateBuffer(&othermatrix, NULL, &matrixLocationBuffer[1]);
+
+
+#pragma endregion
+
+
+#pragma region instanced stuff
+
+	count = 4;
+
+	instances.m_newPos[0] = XMFLOAT4(-1.5f, -1.5f, 5.0f, 1.0f);
+	instances.m_newPos[1] = XMFLOAT4(-1.5f, 1.5f, 5.0f, 1.0f);
+	instances.m_newPos[2] = XMFLOAT4(1.5f, -1.5f, 5.0f, 1.0f);
+	instances.m_newPos[3] = XMFLOAT4(1.5f, 1.5f, 5.0f, 1.0f);
+
+	D3D11_BUFFER_DESC instanceBufferDesc;
+
+	instanceBufferDesc.ByteWidth = sizeof(InstancedObj) * count;
+	instanceBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+	instanceBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+	instanceBufferDesc.CPUAccessFlags = 0;
+	instanceBufferDesc.MiscFlags = 0;
+	//instanceBufferDesc.StructureByteStride = 0;
+
+	D3D11_SUBRESOURCE_DATA instanceData;
+
+	instanceData.pSysMem = &instances;
+	instanceData.SysMemPitch = 0;
+	instanceData.SysMemSlicePitch = 0;
+
+	tester = dev->CreateBuffer(&instanceBufferDesc, &instanceData, &InstanceBuff);
+
+#pragma endregion
+
+
+
+
+	return true;
+}
+
+
+
+
+
+bool ObjectModel::InstancedRun(
+	ID3D11Device* dev,
+	ID3D11DeviceContext* devCon)
+{
+	HRESULT tester = 0;
+#pragma region place on map
+
+	ProjView->world = world;// *XMMatrixRotationX(180);
+
+
+	ProjView->view = XMMatrixInverse(nullptr, ProjView->view);
+
+
+	D3D11_MAPPED_SUBRESOURCE mapRes;
+
+
+	ZeroMemory(&mapRes, sizeof(D3D11_MAPPED_SUBRESOURCE));
+	tester = devCon->Map(matrixLocationBuffer[1], NULL, D3D11_MAP_WRITE_DISCARD, NULL, &mapRes);
+	memcpy(mapRes.pData, ProjView, sizeof(ProjViewMatricies));
+	devCon->Unmap(matrixLocationBuffer[1], NULL);
+
+	devCon->VSSetConstantBuffers(0, 1, &matrixLocationBuffer[1]);
+
+	ProjView->view = XMMatrixInverse(nullptr, ProjView->view);
+
+	ProjView->world = XMMatrixIdentity();
+#pragma endregion
+
+
+
+#pragma region VS and PS
+	UINT strides[2];
+	UINT offsets[2];
+	ID3D11Buffer* bufferPointers[2];
+
+	strides[0] = sizeof(StrideStruct);
+	strides[1] = sizeof(InstancedObj);
+	offsets[0] = 0;
+	offsets[1] = 0;
+	bufferPointers[0] = VertBuff;
+	bufferPointers[1] = InstanceBuff;
+
+	devCon->PSSetSamplers(0, 1, &ObjTextureSamplerState);
+	devCon->PSSetShaderResources(0, 2, ObjTexture);
+
+	devCon->IASetVertexBuffers(0, 2, bufferPointers, strides, offsets);
+
+	devCon->IASetIndexBuffer(IndexBuff, DXGI_FORMAT_R32_UINT, offsets[0]);
+
+	devCon->VSSetShader(vertexShader, 0, 0);
+	devCon->PSSetShader(pixelShader, 0, 0);
+
+	devCon->IASetInputLayout(layout);
+
+
+	devCon->OMSetBlendState(0, 0, 0xffffffff);
+	devCon->DrawIndexedInstanced(vertexIndices.size(), count, 0 ,0, 0);
+
+
+	ID3D11ShaderResourceView * nullShader = nullptr;
+	//devCon->PSSetShaderResources(0, 1, &nullShader);
+
+#pragma endregion
+
+	return true;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -902,11 +1168,11 @@ void ObjectModel::ComputeTangents()
 
 	for (unsigned int i = 0; i < m_stride.size() / 3; i++)
 	{
-		
+
 		//Get the vector describing one edge of our triangle (edge 0,2)
-		vecX = v_vertices[vertexIndices[(i * 3)]].m_vect.x - v_vertices[vertexIndices[(i * 3)+ 2]].m_vect.x;
-		vecY = v_vertices[vertexIndices[(i * 3)]].m_vect.y - v_vertices[vertexIndices[(i * 3)+ 2]].m_vect.y;
-		vecZ = v_vertices[vertexIndices[(i * 3)]].m_vect.z - v_vertices[vertexIndices[(i * 3)+ 2]].m_vect.z;
+		vecX = v_vertices[vertexIndices[(i * 3)]].m_vect.x - v_vertices[vertexIndices[(i * 3) + 2]].m_vect.x;
+		vecY = v_vertices[vertexIndices[(i * 3)]].m_vect.y - v_vertices[vertexIndices[(i * 3) + 2]].m_vect.y;
+		vecZ = v_vertices[vertexIndices[(i * 3)]].m_vect.z - v_vertices[vertexIndices[(i * 3) + 2]].m_vect.z;
 		edge1 = XMVectorSet(vecX, vecY, vecZ, 0.0f);	//Create our first edge
 
 		//Get the vector describing another edge of our triangle (edge 2,1)
@@ -917,7 +1183,7 @@ void ObjectModel::ComputeTangents()
 
 		//Cross multiply the two edge vectors to get the un-normalized face normal
 		XMStoreFloat3(&unnormalized, XMVector3Cross(edge1, edge2));
-		
+
 		tempNormal.push_back(unnormalized);
 
 		//Find first texture coordinate edge 2d vector
@@ -927,7 +1193,7 @@ void ObjectModel::ComputeTangents()
 		//Find second texture coordinate edge 2d vector
 		tcU2 = m_stride[vertexIndices[(i * 3) + 2]].v_uvs.x - m_stride[vertexIndices[(i * 3) + 1]].v_uvs.x;
 		tcV2 = m_stride[vertexIndices[(i * 3) + 2]].v_uvs.y - m_stride[vertexIndices[(i * 3) + 1]].v_uvs.y;
-		
+
 		//Find tangent using both tex coord edges and position edges
 		tangent.x = (tcV1 * XMVectorGetX(edge1) - tcV2 * XMVectorGetX(edge2)) * (1.0f / (tcU1 * tcV2 - tcU2 * tcV1));
 		tangent.y = (tcV1 * XMVectorGetY(edge1) - tcV2 * XMVectorGetY(edge2)) * (1.0f / (tcU1 * tcV2 - tcU2 * tcV1));
