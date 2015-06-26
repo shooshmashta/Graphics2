@@ -213,10 +213,10 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 	scd.BufferDesc.RefreshRate.Numerator = 0;
 
 	scd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;      // how swap chain is to be used
-	scd.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;// | D3D11_CREATE_DEVICE_DEBUG;
+	scd.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH | D3D11_CREATE_DEVICE_DEBUG;
 	scd.OutputWindow = window;                              // the window to be used
-	scd.SampleDesc.Count = 1;                               // how many multisamples
-	scd.SampleDesc.Quality = 0;
+	scd.SampleDesc.Count = 2;                               // how many multisamples
+	scd.SampleDesc.Quality = D3D11_STANDARD_MULTISAMPLE_PATTERN;
 	scd.Windowed = TRUE;                                    // windowed/full-screen mode
 	scd.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
 	scd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
@@ -232,7 +232,6 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 	dev->CreateDeferredContext(0, &defCon);
 
 
-	swapGlobal = swap;
 
 	////get the address of the back buffer
 	ID3D11Texture2D *_BackBuffer = nullptr;
@@ -273,14 +272,14 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 	descDepth.ArraySize = 1;
 	descDepth.MiscFlags = NULL;
 	descDepth.CPUAccessFlags = NULL;
-	descDepth.SampleDesc.Count = 1;
-	descDepth.SampleDesc.Quality = 0;
+	descDepth.SampleDesc.Count = 2;
+	descDepth.SampleDesc.Quality = D3D11_STANDARD_MULTISAMPLE_PATTERN;
 	descDepth.Width = BACKBUFFER_WIDTH;
 	descDepth.Height = BACKBUFFER_HEIGHT;
 	descDepth.Usage = D3D11_USAGE_DEFAULT;
 	descDepth.Format = DXGI_FORMAT_R32_TYPELESS;
 	descDepth.BindFlags = D3D11_BIND_DEPTH_STENCIL;// | D3D11_BIND_SHADER_RESOURCE;
-
+	
 	tester = dev->CreateTexture2D(&descDepth, NULL, &pDepthStencil);
 
 
@@ -320,7 +319,7 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 
 
 	descDSV.Format = DXGI_FORMAT_D32_FLOAT;
-	descDSV.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+	descDSV.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DMS;
 	descDSV.Texture2D.MipSlice = 0;
 	descDSV.Flags = NULL;
 
@@ -399,8 +398,8 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 	TV_Desc.MipLevels = 1;
 	TV_Desc.ArraySize = 1;
 	TV_Desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-	TV_Desc.SampleDesc.Count = 1;
-	TV_Desc.SampleDesc.Quality = 0;
+	TV_Desc.SampleDesc.Count = 2;
+	TV_Desc.SampleDesc.Quality = D3D11_STANDARD_MULTISAMPLE_PATTERN;
 	TV_Desc.Usage = D3D11_USAGE_DEFAULT;
 	TV_Desc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
 	TV_Desc.CPUAccessFlags = 0;
@@ -409,13 +408,13 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 	dev->CreateTexture2D(&TV_Desc, NULL, &TV_TextureMap);
 
 	renderTargetViewDesc.Format = TV_Desc.Format;
-	renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
+	renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2DMS;
 	renderTargetViewDesc.Texture2D.MipSlice = 0;
 
 	dev->CreateRenderTargetView(TV_TextureMap, NULL, &TV_RTVMap);
 
 	shaderResourceViewDesc.Format = TV_Desc.Format;
-	shaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+	shaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DMS;
 	shaderResourceViewDesc.Texture2D.MipLevels = 1;
 	shaderResourceViewDesc.Texture2D.MostDetailedMip = 0;
 
@@ -441,6 +440,7 @@ DEMO_APP::DEMO_APP(HINSTANCE hinst, WNDPROC proc)
 #pragma endregion
 
 
+	swapGlobal = swap;
 }
 //****************************************************************************
 //**************************** EXECUTION *************************************
@@ -661,7 +661,7 @@ bool DEMO_APP::Run()
 	
 	light.SetParameters(defCon, nullptr, &OotherM);
 	//surface.textureResource[0]->Release();
-	if (rtv)
+	/*if (rtv)
 	{
 		surface.ObjTexture[0]->Release();
 		surface.ObjTexture[0] = nullptr;
@@ -672,7 +672,7 @@ bool DEMO_APP::Run()
 		surface.ObjTexture[0]->Release();
 		surface.ObjTexture[0] = nullptr;
 		dev->CreateShaderResourceView(TV_TextureMap, NULL, &surface.ObjTexture[0]);
-	}
+	}*/
 
 	//*******************************************************************************************
 	//*******************************************************************************************
@@ -800,7 +800,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		int width = LOWORD(lParam);
 		int height = HIWORD(lParam);
 		
-		swapGlobal->ResizeBuffers(1, width, height, DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH);
+		if (swapGlobal)
+		{
+			swapGlobal->ResizeBuffers(1, width, height, DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH);
+		}
 
 
 	}
